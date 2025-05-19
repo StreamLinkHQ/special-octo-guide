@@ -2,7 +2,7 @@ import { CiStreamOn } from "react-icons/ci";
 import { usePrejoin, useRequirePublicKey } from "@vidbloq/react";
 import { RiLink } from "react-icons/ri";
 import { StreamLayout } from "./layout";
-import Loading from "./ui/loader";
+import { Loading } from "./ui";
 
 const Prejoin = () => {
   const { publicKey } = useRequirePublicKey();
