@@ -3,7 +3,7 @@ import { useCreateStream, useRequirePublicKey } from "@vidbloq/react";
 import { RiLink } from "react-icons/ri";
 import { LuRadio, LuCircleFadingPlus } from "react-icons/lu";
 import { MdKeyboardArrowDown } from "react-icons/md";
-import { TbCalendarPlus } from "react-icons/tb";
+import { TbCalendarPlus, TbVideo } from "react-icons/tb";
 import { StreamLayout, Loading, ShareModal } from "../components";
 
 type Option = "livestream" | "meeting";
@@ -11,7 +11,7 @@ type Option = "livestream" | "meeting";
 enum StreamSessionType {
   Livestream = "Livestream",
   Meeting = "Meeting",
-  Podcast = "Podcast",
+  // Podcast = "Podcast",
 }
 
 const CreateStream = () => {
@@ -75,13 +75,13 @@ const CreateStream = () => {
             }`}
           >
             <div className="relative font-poppins">
-              <div className="flex flex-col gap-y-3 lg:!gap-x-3 lg:!gap-y-0 lg:!flex-row items-center">
+              <div className="flex flex-col gap-y-3 lg:!gap-x-2 lg:!gap-y-0 lg:!flex-row items-center">
                 <div
                   className="flex flex-row items-stretch cursor-pointer w-full lg:!w-2/3"
                   onClick={() => toggleDropdown("livestream")}
                 >
                   <div className="p-[1px] border rounded-l-xl border-[#DCCCF6]">
-                    <div className="border-2 p-2 rounded-l-xl border-[#DCCCF6]">
+                    <div className="border-[1.5px] p-2 rounded-l-xl border-[#DCCCF6]">
                       <LuRadio className="text-2xl text-[#4300B1]" />
                     </div>
                   </div>
@@ -146,14 +146,14 @@ const CreateStream = () => {
             }`}
           >
             <div className="relative font-poppins">
-              <div className="flex items-center flex-col gap-y-3 lg:!gap-x-3 lg:!gap-y-0 lg:!flex-row">
+              <div className="flex items-center flex-col gap-y-3 lg:!gap-x-2 lg:!gap-y-0 lg:!flex-row">
                 <div
                   className="flex flex-row  cursor-pointer w-full lg:!w-1/2"
                   onClick={() => toggleDropdown("meeting")}
                 >
                   <div className="p-[1px] border rounded-l-xl border-[#DCCCF6]">
-                    <div className="border-2 p-2 rounded-l-xl border-[#DCCCF6]">
-                      <LuRadio className="text-2xl text-[#4300B1]" />
+                    <div className="border-[1.5px] p-2 rounded-l-xl border-[#DCCCF6]">
+                      <TbVideo className="text-2xl text-[#4300B1]" />
                     </div>
                   </div>
                   <div className="p-[2px] border rounded-r-xl border-[#4300B1] w-full">
@@ -164,7 +164,7 @@ const CreateStream = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-row w-full lg:!w-1/2">
+                <div className="flex flex-row w-full lg:!w-2/3">
                   <div className="p-[1px] border rounded-l-xl border-[#F5F5F5]">
                     <div className="border-2 p-2 rounded-l-xl border-[#F5F5F5]">
                       <RiLink className="text-2xl text-[#4300B1]" />
