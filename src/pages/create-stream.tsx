@@ -6,14 +6,16 @@ import { MdKeyboardArrowDown } from "react-icons/md";
 import { TbCalendarPlus } from "react-icons/tb";
 import { StreamLayout, Loading, ShareModal } from "../components";
 
-type Option = "stream" | "meeting";
+type Option = "livestream" | "meeting";
+
 enum StreamSessionType {
   Livestream = "Livestream",
   Meeting = "Meeting",
   Podcast = "Podcast",
 }
+
 const CreateStream = () => {
-  const [selectedOption, setSelectedOption] = useState<Option>("stream");
+  const [selectedOption, setSelectedOption] = useState<Option>("livestream");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const toggleDropdown = (dropdownName: string) => {
     setActiveDropdown(activeDropdown === dropdownName ? null : dropdownName);
@@ -39,24 +41,22 @@ const CreateStream = () => {
         <div className="w-full">
           <p>Hello </p>
           <h2 className="text-gray-800 text-3xl lg:!text-4xl font-medium mb-3 font-poppins">
-            Creating a Stream or Meeting?
+            Creating a Livestream or Meeting?
           </h2>
 
           <div className="flex items-center mb-6 font-inter">
             <span className="mr-2">Select,</span>
-            {/* Stream Tab */}
             <button
-              onClick={() => selectTab("stream")}
+              onClick={() => selectTab("livestream")}
               className={`text-[#6E2ADB] font-medium mr-2 ${
-                selectedOption === "stream"
+                selectedOption === "livestream"
                   ? "border-b-2 border-[#6E2ADB]"
                   : "opacity-60 hover:opacity-100 transition-opacity"
               }`}
             >
-              Stream
+              Livestream
             </button>
             <span className="text-gray-500 mr-2">or</span>
-            {/* Meeting Tab */}
             <button
               onClick={() => selectTab("meeting")}
               className={`text-[#6E2ADB] font-medium ${
@@ -70,15 +70,15 @@ const CreateStream = () => {
             <span className="ml-2">to start.</span>
           </div>
           <div
-            className={`space-y-4 w-full lg:!w-2/4 ${
-              selectedOption !== "stream" ? "hidden" : ""
+            className={`space-y-4 w-full lg:!w-3/5 ${
+              selectedOption !== "livestream" ? "hidden" : ""
             }`}
           >
             <div className="relative font-poppins">
-              <div className="flex flex-col gap-y-3 lg:!gap-y-0 lg:!flex-row items-center">
+              <div className="flex flex-col gap-y-3 lg:!gap-x-3 lg:!gap-y-0 lg:!flex-row items-center">
                 <div
-                  className="flex flex-row items-stretch cursor-pointer w-full lg:!w-1/2"
-                  onClick={() => toggleDropdown("stream")}
+                  className="flex flex-row items-stretch cursor-pointer w-full lg:!w-2/3"
+                  onClick={() => toggleDropdown("livestream")}
                 >
                   <div className="p-[1px] border rounded-l-xl border-[#DCCCF6]">
                     <div className="border-2 p-2 rounded-l-xl border-[#DCCCF6]">
@@ -88,12 +88,12 @@ const CreateStream = () => {
 
                   <div className="p-[2px] border rounded-r-xl border-[#4300B1] w-full">
                     <div className="bg-[#4300B1] p-2 rounded-r-xl border-2 border-[#4300B1] flex-1 flex lg:!flex-none items-center justify-center">
-                      <p className="text-white text-sm">New Stream </p>
+                      <p className="text-white text-sm">New Livestream </p>
                       <MdKeyboardArrowDown className="text-white" />
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-row w-full lg:!w-1/2">
+                <div className="flex flex-row w-full lg:!w-[70%]">
                   <div className="p-[1px] border rounded-l-xl border-[#F5F5F5]">
                     <div className="border-2 p-2 rounded-l-xl border-[#F5F5F5]">
                       <RiLink className="text-2xl text-[#4300B1]" />
@@ -102,7 +102,7 @@ const CreateStream = () => {
                   <div className="p-[2px] border rounded-r-xl border-[#F5F5F5] w-full">
                     <div className="rounded-r-xl border-2 border-[#F5F5F5] p-2 flex-1 flex">
                       <input
-                        placeholder="Paste link to join stream or meeting..."
+                        placeholder="Paste link to join livestream or meeting..."
                         className="focus:outline-none w-full text-sm"
                       />
                     </div>
@@ -112,7 +112,7 @@ const CreateStream = () => {
 
               <div
                 className={`absolute left-0 top-10 bg-white w-60 rounded-lg shadow-lg p-2 z-10 origin-top transition-all duration-200 ${
-                  activeDropdown === "stream"
+                  activeDropdown === "livestream"
                     ? "opacity-100 scale-y-100"
                     : "opacity-0 scale-y-0 pointer-events-none"
                 }`}
@@ -125,7 +125,7 @@ const CreateStream = () => {
                     <LuCircleFadingPlus className="" />
                   </div>
                   <span className="text-gray-700 text-sm font-inter">
-                    Start instant stream
+                    Start instant livestream
                   </span>
                 </div>
                 <div className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer">
@@ -133,7 +133,7 @@ const CreateStream = () => {
                     <TbCalendarPlus className="" />
                   </div>
                   <span className="text-gray-700 text-sm font-inter">
-                    Schedule Stream
+                    Schedule livestream
                   </span>
                 </div>
               </div>
@@ -141,12 +141,12 @@ const CreateStream = () => {
           </div>
 
           <div
-            className={`space-y-4 w-full lg:!w-2/4  ${
+            className={`space-y-4 w-full lg:!w-3/5  ${
               selectedOption !== "meeting" ? "hidden" : ""
             }`}
           >
-            <div className="relative">
-              <div className="flex items-center flex-col gap-y-3 lg:!gap-y-0 lg:!flex-row">
+            <div className="relative font-poppins">
+              <div className="flex items-center flex-col gap-y-3 lg:!gap-x-3 lg:!gap-y-0 lg:!flex-row">
                 <div
                   className="flex flex-row  cursor-pointer w-full lg:!w-1/2"
                   onClick={() => toggleDropdown("meeting")}
@@ -174,7 +174,7 @@ const CreateStream = () => {
                   <div className="p-[2px] border rounded-r-xl border-[#F5F5F5] w-full">
                     <div className="rounded-r-xl border-2 border-[#F5F5F5] p-2 flex-1 flex">
                       <input
-                        placeholder="Paste link to join stream or meeting..."
+                        placeholder="Paste link to join livestream or meeting..."
                         className="focus:outline-none w-full text-sm"
                       />
                     </div>
