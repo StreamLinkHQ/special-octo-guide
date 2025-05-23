@@ -147,13 +147,16 @@ const CreateStream = () => {
                     Start instant livestream
                   </span>
                 </div>
-                <div className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer">
-                  <div className="text-[#6E2ADB]">
+                <div className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-not-allowed opacity-60 relative">
+                  <div className="text-gray-400">
                     <TbCalendarPlus className="" />
                   </div>
                   <span className="text-gray-700 text-sm font-inter">
                     Schedule livestream
                   </span>
+                  <div className="absolute text-gray-600 text-[7px] right-0 top-0 p-0.5 bg-gray-200 rounded-full font-medium">
+                    <p>Coming Soon</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -239,13 +242,16 @@ const CreateStream = () => {
                     Create meeting for later
                   </span>
                 </div>
-                <div className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer">
-                  <div className="text-[#6E2ADB]">
+                <div className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-not-allowed opacity-60 relative">
+                  <div className="text-gray-400">
                     <TbCalendarPlus className="" />
                   </div>
                   <span className="text-gray-700 text-sm font-inter">
                     Schedule meeting
                   </span>
+                  <div className="absolute text-gray-600 text-[7px] right-0 top-0 p-0.5 bg-gray-200 rounded-full font-medium">
+                    <p>Coming Soon</p>
+                  </div>
                 </div>
               </div>
             </div>
