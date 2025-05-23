@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useCreateStream, useRequirePublicKey } from "@vidbloq/react";
+import { useNavigate } from "react-router-dom";
 import { RiLink } from "react-icons/ri";
 import { LuRadio, LuCircleFadingPlus } from "react-icons/lu";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 import { TbCalendarPlus, TbVideo } from "react-icons/tb";
 import { StreamLayout, Loading, ShareModal } from "../components";
 
@@ -15,8 +16,11 @@ enum StreamSessionType {
 }
 
 const CreateStream = () => {
-  const [selectedOption, setSelectedOption] = useState<Option>("livestream");
+  const [selectedOption, setSelectedOption] = useState<Option>("meeting");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const navigate = useNavigate();
+
   const toggleDropdown = (dropdownName: string) => {
     setActiveDropdown(activeDropdown === dropdownName ? null : dropdownName);
   };
@@ -24,11 +28,19 @@ const CreateStream = () => {
 
   const { createStream, stream, isLoading } = useCreateStream();
 
-  const createNewStream = async (type: StreamSessionType) => {
-    await createStream({
+  const createNewStream = async (
+    type: StreamSessionType,
+    isInstant: boolean = true
+  ) => {
+    const newStream = await createStream({
       streamSessionType: type,
       wallet: publicKey?.toString() ?? "",
     });
+    if (isInstant && newStream) {
+      navigate(`/${newStream.name}`);
+    } else {
+      setShowModal(true);
+    }
   };
 
   const selectTab = (option: Option) => {
@@ -47,25 +59,26 @@ const CreateStream = () => {
           <div className="flex items-center mb-6 font-inter">
             <span className="mr-2">Select,</span>
             <button
-              onClick={() => selectTab("livestream")}
-              className={`text-[#6E2ADB] font-medium mr-2 ${
-                selectedOption === "livestream"
-                  ? "border-b-2 border-[#6E2ADB]"
-                  : "opacity-60 hover:opacity-100 transition-opacity"
-              }`}
-            >
-              Livestream
-            </button>
-            <span className="text-gray-500 mr-2">or</span>
-            <button
               onClick={() => selectTab("meeting")}
-              className={`text-[#6E2ADB] font-medium ${
+              className={`text-[#6E2ADB] font-medium mr-2 ${
                 selectedOption === "meeting"
                   ? "border-b-2 border-[#6E2ADB]"
                   : "opacity-60 hover:opacity-100 transition-opacity"
               }`}
             >
               Meeting
+            </button>
+
+            <span className="text-gray-500 mr-2">or</span>
+            <button
+              onClick={() => selectTab("livestream")}
+              className={`text-[#6E2ADB] font-medium ${
+                selectedOption === "livestream"
+                  ? "border-b-2 border-[#6E2ADB]"
+                  : "opacity-60 hover:opacity-100 transition-opacity"
+              }`}
+            >
+              Livestream
             </button>
             <span className="ml-2">to start.</span>
           </div>
@@ -89,7 +102,11 @@ const CreateStream = () => {
                   <div className="p-[2px] border rounded-r-xl border-[#4300B1] w-full">
                     <div className="bg-[#4300B1] p-2 rounded-r-xl border-2 border-[#4300B1] flex-1 flex lg:!flex-none items-center justify-center">
                       <p className="text-white text-sm">New Livestream </p>
-                      <MdKeyboardArrowDown className="text-white" />
+                      {activeDropdown === "livestream" ? (
+                        <MdKeyboardArrowUp className="text-white" />
+                      ) : (
+                        <MdKeyboardArrowDown className="text-white" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -119,7 +136,9 @@ const CreateStream = () => {
               >
                 <div
                   className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer"
-                  onClick={() => createNewStream(StreamSessionType.Livestream)}
+                  onClick={() =>
+                    createNewStream(StreamSessionType.Livestream, true)
+                  }
                 >
                   <div className="text-[#6E2ADB]">
                     <LuCircleFadingPlus className="" />
@@ -159,7 +178,11 @@ const CreateStream = () => {
                   <div className="p-[2px] border rounded-r-xl border-[#4300B1] w-full">
                     <div className="bg-[#4300B1] p-2 rounded-r-xl border-2 border-[#4300B1] flex-1 flex lg:!flex-none items-center justify-center">
                       <p className="text-white text-sm">New Meeting</p>
-                      <MdKeyboardArrowDown className="text-white" />
+                      {activeDropdown === "meeting" ? (
+                        <MdKeyboardArrowUp className="text-white" />
+                      ) : (
+                        <MdKeyboardArrowDown className="text-white" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -192,7 +215,9 @@ const CreateStream = () => {
               >
                 <div
                   className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer"
-                  onClick={() => createNewStream(StreamSessionType.Meeting)}
+                  onClick={() =>
+                    createNewStream(StreamSessionType.Meeting, true)
+                  }
                 >
                   <div className="text-[#6E2ADB]">
                     <LuCircleFadingPlus className="" />
@@ -203,7 +228,9 @@ const CreateStream = () => {
                 </div>
                 <div
                   className="py-2 px-3 hover:bg-gray-100 rounded-md flex items-center gap-3 cursor-pointer"
-                  onClick={() => createNewStream(StreamSessionType.Meeting)}
+                  onClick={() =>
+                    createNewStream(StreamSessionType.Meeting, false)
+                  }
                 >
                   <div className="text-[#6E2ADB]">
                     <RiLink className="" />
@@ -226,7 +253,9 @@ const CreateStream = () => {
         </div>
       </StreamLayout>
       {isLoading && <Loading />}
-      {stream && <ShareModal stream={stream} />}
+      {stream && showModal && (
+        <ShareModal stream={stream} closeFunc={() => setShowModal(false)} />
+      )}
     </>
   );
 };

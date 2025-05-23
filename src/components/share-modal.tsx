@@ -1,8 +1,9 @@
 import { RiLink } from "react-icons/ri";
 import { IoIosClose } from "react-icons/io";
 import { FiCopy } from "react-icons/fi";
-import { Modal } from "./ui";
 import toast from "react-hot-toast";
+import { Modal } from "./ui";
+
 
 type Stream = {
   name: string;
@@ -10,10 +11,11 @@ type Stream = {
 };
 type ShareModalProps = {
   stream: Stream;
-  //   name: string;
+  closeFunc: () => void;
 };
 const ShareModal = ({
   stream: { name, streamSessionType },
+  closeFunc
 }: ShareModalProps) => {
   const copyText = async (text: string) => {
     try {
@@ -29,7 +31,7 @@ const ShareModal = ({
       <div className="bg-white relative rounded-lg w-[80%] lg:!w-[350px]">
         <div
           className="bg-white p-1.5 absolute -top-2.5 -right-1.5 rounded cursor-pointer"
-          //   onClick={onClose}
+            onClick={closeFunc}
         >
           <IoIosClose className="text-black text-lg" />
         </div>
