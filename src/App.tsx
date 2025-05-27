@@ -3,11 +3,26 @@ import { VidbloqProvider } from "@vidbloq/react";
 import { Toaster } from "react-hot-toast";
 import { Login, CreateStream, JoinStream } from "./pages";
 import { WalletProvider } from "./context";
+import { ProtectedRoute } from "./components";
 
 const router = createBrowserRouter([
   { path: "/", element: <Login /> },
-  { path: "/create", element: <CreateStream /> },
-  { path: "/:id", element: <JoinStream /> },
+  {
+    path: "/create",
+    element: (
+      <ProtectedRoute>
+        <CreateStream />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/:id",
+    element: (
+      <ProtectedRoute>
+        <JoinStream />
+      </ProtectedRoute>
+    ),
+  },
 ]);
 
 function App() {
@@ -21,7 +36,7 @@ function App() {
           <RouterProvider router={router} />
         </WalletProvider>
       </VidbloqProvider>
-      <Toaster position="top-right"/>
+      <Toaster position="top-right" />
     </>
   );
 }

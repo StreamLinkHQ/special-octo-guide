@@ -1,21 +1,14 @@
-import { useWallet, CivicAuthIframeContainer, useUser } from "@civic/auth-web3/react";
+import { useWallet } from "@civic/auth-web3/react";
 import wave from "../../assets/wave.png";
 import mobileWave from "../../assets/mobile-wave.png";
 import { CustomWalletProvider } from "../custom-wallet-provider";
-
 
 type StreamLayoutProps = {
   children: React.ReactElement;
 };
 
 const StreamLayout = ({ children }: StreamLayoutProps) => {
-  const { user } = useUser();
   const userWallet = useWallet({ type: "solana" });
-  console.log({userWallet})
-
-  if(!user) {
-    return <CivicAuthIframeContainer />
-  }
 
   return (
     <CustomWalletProvider userWallet={userWallet}>

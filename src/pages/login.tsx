@@ -1,17 +1,30 @@
+import { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { useNavigate } from "react-router-dom";
-import { useWallet, useUser } from "@civic/auth-web3/react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useUser } from "@civic/auth-web3/react";
 import { AuthLayout } from "../components";
 
 const Login = () => {
-  const test = useWallet({ type: "solana" });
-  console.log({ test });
   const userContext = useUser();
-
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (userContext.user) {
+      // Get the page they were trying to access, or default to /create
+      const from = location.state?.from?.pathname || '/create';
+      navigate(from, { replace: true });
+    }
+  }, [userContext.user, navigate, location]);
+
   const signUp = async () => {
-    await userContext.signIn();
-    navigate("/create");
+    try {
+      await userContext.signIn();
+      // After successful sign in, the useEffect above will handle the redirect
+    } catch (error) {
+      console.error('Sign in failed:', error);
+      // Handle sign in error here if needed
+    }
   };
 
   return (
@@ -32,11 +45,7 @@ const Login = () => {
 
           <div className="border cursor-pointer border-[#4300B1] p-[2px] rounded-r-xl flex justify-center items-center">
             <div className="bg-[#4300B1] p-4 rounded-r-xl">
-              {/* {user ? (
-                <p className="text-white text-sm">{user?.name}</p>
-              ) : ( */}
               <p className="text-white text-sm">Sign Up with Google</p>
-              {/* )} */}
             </div>
           </div>
         </div>
@@ -47,21 +56,3 @@ const Login = () => {
 
 export default Login;
 
-//   useEffect(() => {
-//     if (userContext.user) {
-//      ;
-//       (async()=>{
-//             if (userContext.user && !userHasWallet(userContext)) {
-//          await userContext.createWallet();
-//             }
-//  console.log(userContext.user)
-//       })()
-
-//     }
-//   }, [userContext.user]);
-
-// import { signIn } from "@civic/auth/react";
-// import { useWallet } from "@civic/auth-web3/react";
-// import { userHasWallet } from "@civic/auth-web3";
-// import { useEffect } from "react";
-// useWallet({ type: "solana" })
