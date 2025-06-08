@@ -1,5 +1,6 @@
-import { useUser } from "@civic/auth-web3/react";
+// import { useUser } from "@civic/auth-web3/react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/auth";
 import { Loading } from "../components";
 
 type ProtectedRouteProps = {
@@ -7,7 +8,7 @@ type ProtectedRouteProps = {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading } = useUser();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
   
   // Show loading while checking authentication
@@ -17,9 +18,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   
   // Redirect to login if not authenticated, passing current location
   if (!user) {
+    console.log("User is not authenticated:", "protected-route");
     return <Navigate to="/" state={{ from: location }} replace />;
   }
-  
+  console.log("User is authenticated:", "protected-route2");
   // User is authenticated, render the protected component
   return <>{children}</>;
 };

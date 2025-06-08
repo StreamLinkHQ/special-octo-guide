@@ -5,7 +5,7 @@ type ModalProps = {
 
 const Modal = ({ children, bgColor }: ModalProps) => {
   return (
-    <div className={`z-[80] w-full h-full ${bgColor} fixed top-0 left-0`}>
+    <div className={`z-[20] w-full h-full ${bgColor} fixed top-0 left-0`}>
       <div className="flex flex-col items-center justify-center h-full">
         {children}
       </div>

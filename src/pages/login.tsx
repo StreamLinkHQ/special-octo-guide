@@ -2,33 +2,32 @@ import { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "@civic/auth-web3/react";
-import { AuthLayout } from "../components";
+import { AuthLayout, Loading } from "../components";
+import { useAuth } from "../context/auth";
 
 const Login = () => {
   const userContext = useUser();
   const navigate = useNavigate();
   const location = useLocation();
+  const { signUp } = useAuth();
 
   useEffect(() => {
     if (userContext.user) {
-      // Get the page they were trying to access, or default to /create
-      const from = location.state?.from?.pathname || '/create';
+      console.log("User is authenticated:", userContext.user, "loginpage");
+      // Get the page they were trying to access, or default to /create || '/create'
+      const from = location.state?.from?.pathname || "/create";
       navigate(from, { replace: true });
     }
-  }, [userContext.user, navigate, location]);
+  }, [userContext.user, navigate, location.state]);
 
-  const signUp = async () => {
-    try {
-      await userContext.signIn();
-      // After successful sign in, the useEffect above will handle the redirect
-    } catch (error) {
-      console.error('Sign in failed:', error);
-      // Handle sign in error here if needed
-    }
-  };
+  if (userContext.isLoading) {
+    return <Loading />;
+  }
+
 
   return (
-    <AuthLayout>
+
+        <AuthLayout>
       <div className="w-full flex flex-col gap-y-3">
         <p className="w-full lg:w-9/12 text-[#3A3A3A] text-2xl lg:text-5xl font-poppins">
           Stream Calls and meetings for everyone.
@@ -36,6 +35,7 @@ const Login = () => {
         <p className="text-[#626262] font-inter">
           Connect, collaborate, and celebrate from anywhere with StreamLink.
         </p>
+
         <div className="flex flex-row items-stretch" onClick={signUp}>
           <div className="border border-[#DCCCF6] p-[2px] rounded-l-xl">
             <div className="border border-[#DCCCF6] p-4 rounded-l-xl">
@@ -51,6 +51,7 @@ const Login = () => {
         </div>
       </div>
     </AuthLayout>
+
   );
 };
 

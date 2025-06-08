@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { VidbloqProvider } from "@vidbloq/react";
 import { Toaster } from "react-hot-toast";
 import { Login, CreateStream, JoinStream, Profile } from "./pages";
-import { WalletProvider } from "./context";
+import { WalletProvider, AuthProvider } from "./context";
 import { ProtectedRoute } from "./components";
 
 const router = createBrowserRouter([
@@ -41,7 +41,9 @@ function App() {
         apiSecret="iO24O0xXjuXSsIhfLorPKRS2NvcWjbRswYLcnYAvxk4="
       >
         <WalletProvider>
-          <RouterProvider router={router} />
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
         </WalletProvider>
       </VidbloqProvider>
       <Toaster position="top-right" />
