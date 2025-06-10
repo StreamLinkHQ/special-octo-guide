@@ -1,33 +1,61 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "@civic/auth-web3/react";
 import { AuthLayout, Loading } from "../components";
-import { useAuth } from "../context/auth";
+import { useAuth } from "../hooks";
+
+const REDIRECT_KEY = 'streamlink_redirect_path';
 
 const Login = () => {
-  const userContext = useUser();
+  const { user, isLoading } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const { signUp } = useAuth();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (userContext.user) {
-      console.log("User is authenticated:", userContext.user, "loginpage");
-      // Get the page they were trying to access, or default to /create || '/create'
-      const from = location.state?.from?.pathname || "/create";
-      navigate(from, { replace: true });
+    // Don't do anything while loading
+    if (isLoading) return;
+    
+    // Don't redirect if we've already done it (prevents loops)
+    if (hasRedirected.current) return;
+    
+    // If user is authenticated
+    if (user) {
+      hasRedirected.current = true;
+      console.log("User authenticated on login page");
+      
+      // First priority: session storage redirect
+      const savedPath = sessionStorage.getItem(REDIRECT_KEY);
+      if (savedPath) {
+        console.log("Redirecting to saved path:", savedPath);
+        sessionStorage.removeItem(REDIRECT_KEY);
+        navigate(savedPath, { replace: true });
+        return;
+      }
+      
+      // Second priority: location state (from Navigate component)
+      const from = location.state?.from?.pathname;
+      if (from) {
+        console.log("Redirecting to location state:", from);
+        navigate(from, { replace: true });
+        return;
+      }
+      
+      // Default: go to /create
+      console.log("No saved redirect, going to /create");
+      navigate("/create", { replace: true });
     }
-  }, [userContext.user, navigate, location.state]);
+  }, [isLoading, user, navigate, location.state]);
 
-  if (userContext.isLoading) {
+  // Show loading while Civic is initializing
+  if (isLoading) {
     return <Loading />;
   }
 
-
   return (
-
-        <AuthLayout>
+    <AuthLayout>
       <div className="w-full flex flex-col gap-y-3">
         <p className="w-full lg:w-9/12 text-[#3A3A3A] text-2xl lg:text-5xl font-poppins">
           Stream Calls and meetings for everyone.
@@ -36,14 +64,14 @@ const Login = () => {
           Connect, collaborate, and celebrate from anywhere with StreamLink.
         </p>
 
-        <div className="flex flex-row items-stretch" onClick={signUp}>
+        <div className="flex flex-row items-stretch cursor-pointer" onClick={signUp}>
           <div className="border border-[#DCCCF6] p-[2px] rounded-l-xl">
             <div className="border border-[#DCCCF6] p-4 rounded-l-xl">
               <FcGoogle className="text-xl" />
             </div>
           </div>
 
-          <div className="border cursor-pointer border-[#4300B1] p-[2px] rounded-r-xl flex justify-center items-center">
+          <div className="border border-[#4300B1] p-[2px] rounded-r-xl flex justify-center items-center">
             <div className="bg-[#4300B1] p-4 rounded-r-xl">
               <p className="text-white text-sm">Sign Up with Google</p>
             </div>
@@ -51,9 +79,7 @@ const Login = () => {
         </div>
       </div>
     </AuthLayout>
-
   );
 };
 
 export default Login;
-

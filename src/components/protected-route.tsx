@@ -1,28 +1,35 @@
-// import { useUser } from "@civic/auth-web3/react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/auth";
+import { useUser } from "@civic/auth-web3/react";
 import { Loading } from "../components";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
 }
 
+const REDIRECT_KEY = 'streamlink_redirect_path';
+
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useUser();
   const location = useLocation();
   
-  // Show loading while checking authentication
+  // ALWAYS show loading while Civic is checking authentication
+  // This prevents any premature redirects
   if (isLoading) {
     return <Loading />;
   }
   
-  // Redirect to login if not authenticated, passing current location
+  // Only after loading is complete, check authentication
   if (!user) {
-    console.log("User is not authenticated:", "protected-route");
+    // Save the intended destination
+    sessionStorage.setItem(REDIRECT_KEY, location.pathname);
+    console.log("User not authenticated, saving path:", location.pathname);
+    
+    // Redirect to login
     return <Navigate to="/" state={{ from: location }} replace />;
   }
-  console.log("User is authenticated:", "protected-route2");
-  // User is authenticated, render the protected component
+  
+  // User is authenticated
+  console.log("User is authenticated:", user);
   return <>{children}</>;
 };
 
