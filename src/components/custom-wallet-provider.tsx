@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { useWalletContext, WalletAdapterBridge } from "@vidbloq/react";
 
@@ -13,66 +13,38 @@ interface CustomWalletProviderProps {
 
 export const CustomWalletProvider: React.FC<CustomWalletProviderProps> = ({ 
   children, 
-  userWallet 
+  userWallet
 }) => {
   const { connectWallet, clearWallet } = useWalletContext();
 
-  // Memoize wallet connection check to prevent unnecessary re-runs
-  const isWalletReady = useMemo(() => {
-    return userWallet && userWallet.address && userWallet.wallet;
-  }, [userWallet]);
-
-  // Memoize the signer creation to prevent recreation on every render
-  const signer = useMemo(() => {
-    if (!isWalletReady || !userWallet?.wallet) return undefined;
-    
-    return {
-      signTransaction: userWallet.wallet.signTransaction.bind(userWallet.wallet)
-    };
-  }, [isWalletReady, userWallet?.wallet]);
-
-  const connectWalletCallback = useCallback(async () => {
-    if (!isWalletReady || !userWallet?.address || !signer) return;
-
-    try {
-      // Check if already connected to avoid redundant operations
-      const storedPublicKey = localStorage.getItem("walletPublicKey");
-      const publicKeyString = new PublicKey(userWallet.address).toBase58();
-      
-      if (storedPublicKey === publicKeyString) {
-        console.log("Wallet already connected, skipping reconnection");
-        return;
-      }
-
-      const publicKey = new PublicKey(userWallet.address);
-      
-      // Connect this wallet to the SDK's wallet context
-      connectWallet(publicKey, signer);
-      
-      // Store necessary information in localStorage
-      localStorage.setItem("walletPublicKey", publicKey.toBase58());
-      localStorage.setItem("walletType", "metakeep");
-      
-      console.log("Custom wallet connected to SDK:", publicKey.toBase58());
-    } catch (error) {
-      console.error("Failed to connect custom wallet:", error);
-    }
-  }, [isWalletReady, userWallet?.address, connectWallet, signer]);
-
-  const clearWalletCallback = useCallback(() => {
-    // Clear stored wallet info
-    localStorage.removeItem("walletPublicKey");
-    localStorage.removeItem("walletType");
-    clearWallet();
-  }, [clearWallet]);
-
   useEffect(() => {
-    if (isWalletReady) {
-      connectWalletCallback();
+    // Only proceed if we have both address and wallet
+    if (userWallet && userWallet.address && userWallet.wallet) {
+      try {
+        // Create a PublicKey from the address
+        const publicKey = new PublicKey(userWallet.address);
+        
+        // Create a signer object that wraps the wallet's signTransaction method
+        const signer = {
+          signTransaction: userWallet.wallet.signTransaction.bind(userWallet.wallet)
+        };
+        
+        // Connect this wallet to the SDK's wallet context
+        connectWallet(publicKey, signer);
+        
+        // Store necessary information in localStorage
+        localStorage.setItem("walletPublicKey", publicKey.toBase58());
+        localStorage.setItem("walletType", "metakeep");
+        
+        console.log("Custom wallet connected to SDK:", publicKey.toBase58());
+      } catch (error) {
+        console.error("Failed to connect custom wallet:", error);
+      }
     } else {
-      clearWalletCallback();
+      // If we don't have a complete wallet, clean up
+      clearWallet();
     }
-  }, [isWalletReady, connectWalletCallback, clearWalletCallback]);
+  }, [userWallet, connectWallet, clearWallet]);
 
   return (
     <>

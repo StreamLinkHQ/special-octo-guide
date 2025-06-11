@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { LuRadio } from "react-icons/lu";
 import { RiLink } from "react-icons/ri";
 import { TbVideo } from "react-icons/tb";
@@ -8,6 +9,7 @@ import {
 } from "@vidbloq/react";
 import { StreamLayout } from "./layout";
 import { Loading } from "./ui";
+import { getDisplayCredentials } from "../utils";
 
 const Prejoin = () => {
   const { publicKey } = useRequirePublicKey();
@@ -17,6 +19,24 @@ const Prejoin = () => {
   const {
     streamMetadata: { creatorWallet, streamSessionType },
   } = useStreamContext();
+
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Auto-populate nickname ONLY on initial component mount
+  useEffect(() => {
+    // Only run this once when component first mounts and nickname is empty
+    if (!hasInitialized && !nickname) {
+      const displayCreds = getDisplayCredentials();
+      setNickname(displayCreds.name);
+      setHasInitialized(true);
+      
+      console.log('Auto-populated nickname from profile:', displayCreds.name, {
+        isUsingGoogleName: displayCreds.isUsingGoogleName,
+        hasCustomPreferences: displayCreds.hasCustomPreferences
+      });
+    }
+  }, [nickname, setNickname, hasInitialized]);
+
   return (
     <>
       <StreamLayout>

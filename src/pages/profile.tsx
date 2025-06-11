@@ -6,7 +6,14 @@ import { IoSunnyOutline, IoCopyOutline } from "react-icons/io5";
 import { FaCheck, FaSave } from "react-icons/fa";
 import { FiMoon } from "react-icons/fi";
 import toast from "react-hot-toast";
-
+import { 
+  getDisplayCredentials, 
+  getGoogleCredentials, 
+  getUserPreferences, 
+  saveUserPreferences,
+  saveGoogleCredentials 
+} from "../utils";
+import type { UserPreferences } from "../types/auth";
 
 const UserProfilePage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(0);
@@ -20,9 +27,7 @@ const UserProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const userContext = useUser();
   const wallet = useWallet({ type: "solana" });
-  console.log({ wallet });
 
-  console.log({ userContext });
 
   const avatarOptions = [
     "https://res.cloudinary.com/adaeze/image/upload/v1745406833/xgkbh9clm7lwcbb2rm0a.png",
@@ -35,7 +40,7 @@ const UserProfilePage = () => {
     "https://res.cloudinary.com/adaeze/image/upload/v1745404741/xio2cl8cj8em9cebtyyb.png",
     "https://res.cloudinary.com/adaeze/image/upload/v1745404621/wwouagdzhxne70kkgaxv.png",
     "https://res.cloudinary.com/adaeze/image/upload/v1745404606/dfzeavyyvmooxyys4knz.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1746917882/ihmztupdw0mgu6ma7v9s.png",
+    "https://res.cloudinary.com/adaeze/image/upload/v1745917882/ihmztupdw0mgu6ma7v9s.png",
   ];
 
   const statusOptions = [
@@ -45,18 +50,37 @@ const UserProfilePage = () => {
     { value: "invisible", label: "Invisible", color: "bg-gray-500" },
   ];
 
+  // Store Google credentials when user data becomes available
+  useEffect(() => {
+    if (userContext.user && userContext.user.name && userContext.user.picture) {
+      saveGoogleCredentials({
+        name: userContext.user.name,
+        picture: userContext.user.picture,
+        email: userContext.user.email
+      });
+    }
+  }, [userContext.user]);
+
   useEffect(() => {
     try {
-      const savedPreferences = localStorage.getItem("streamlink-preferences");
+      const savedPreferences = getUserPreferences();
+      
       if (savedPreferences) {
-        const preferences = JSON.parse(savedPreferences);
-        console.log("Parsed preferences:", preferences);
-        setSelectedAvatar(preferences.selectedAvatar || 0);
-        setUseGoogleAvatar(preferences.useGoogleAvatar !== undefined ? preferences.useGoogleAvatar : true);
-        setUsername(preferences.username || "");
-        setUseGoogleName(preferences.useGoogleName !== undefined ? preferences.useGoogleName : true);
-        setTheme(preferences.theme || "light");
-        setStatus(preferences.status || "available");
+        setSelectedAvatar(savedPreferences.selectedAvatar || 0);
+        setUseGoogleAvatar(savedPreferences.useGoogleAvatar !== undefined ? savedPreferences.useGoogleAvatar : true);
+        setUsername(savedPreferences.username || "");
+        setUseGoogleName(savedPreferences.useGoogleName !== undefined ? savedPreferences.useGoogleName : true);
+        setTheme(savedPreferences.theme || "light");
+        setStatus(savedPreferences.status || "available");
+      } else {
+        // If no saved preferences, check if we have Google credentials to use as defaults
+        const displayCreds = getDisplayCredentials();
+        if (displayCreds.hasCustomPreferences === false && displayCreds.name !== 'User') {
+          // User has Google credentials but no saved preferences - set smart defaults
+          setUseGoogleName(true);
+          setUseGoogleAvatar(true);
+          console.log("No saved preferences found, using Google credentials as defaults");
+        }
       }
     } catch (error) {
       console.error("Error loading preferences from localStorage:", error);
@@ -65,34 +89,9 @@ const UserProfilePage = () => {
     }
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const savePreferencesToLocalStorage = (customPreferences?: any) => {
-    try {
-      const preferences = customPreferences || {
-        selectedAvatar,
-        useGoogleAvatar,
-        username,
-        useGoogleName,
-        theme,
-        status,
-        lastUpdated: new Date().toISOString(),
-      };
-      localStorage.setItem(
-        "streamlink-preferences",
-        JSON.stringify(preferences)
-      );
-      console.log("Preferences saved to localStorage:", preferences);
-    } catch (error) {
-      console.error("Error saving preferences to localStorage:", error);
-    }
-  };
-
-  // Mock function to send username and avatarUrl to backend
   const saveUserProfileToBackend = async () => {
-    const avatarUrl = useGoogleAvatar
-      ? userContext.user?.picture
-      : avatarOptions[selectedAvatar];
-    const finalUsername = useGoogleName ? userContext.user?.name : username;
+    const avatarUrl = getCurrentAvatar();
+    const finalUsername = getCurrentUsername();
 
     const profileData = {
       username: finalUsername,
@@ -114,7 +113,7 @@ const UserProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
-    const currentPreferences = {
+    const currentPreferences: UserPreferences = {
       selectedAvatar,
       useGoogleAvatar,
       username,
@@ -124,18 +123,18 @@ const UserProfilePage = () => {
       lastUpdated: new Date().toISOString(),
     };
     
-    savePreferencesToLocalStorage(currentPreferences);
+    saveUserPreferences(currentPreferences);
 
     const backendSuccess = await saveUserProfileToBackend();
 
     if (backendSuccess) {
       setIsEditing(false);
     } else {
-      alert("Error saving profile. Please try again.");
+      toast.error("Error saving profile. Please try again.");
     }
   };
 
- const copyText = async (text: string) => {
+  const copyText = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast.success("address copied");
@@ -146,13 +145,42 @@ const UserProfilePage = () => {
   };
 
   const getCurrentAvatar = () => {
-    if (useGoogleAvatar && userContext.user?.picture) return userContext.user.picture;
+    if (useGoogleAvatar) {
+      // First try current user context, then fallback to stored Google credentials
+      if (userContext.user?.picture) {
+        return userContext.user.picture;
+      }
+      const displayCreds = getDisplayCredentials();
+      if (displayCreds.avatar) {
+        return displayCreds.avatar;
+      }
+    }
     return avatarOptions[selectedAvatar];
   };
 
   const getCurrentUsername = () => {
-    if (useGoogleName && userContext.user?.name) return userContext.user.name;
+    if (useGoogleName) {
+      // First try current user context, then fallback to stored Google credentials
+      if (userContext.user?.name) {
+        return userContext.user.name;
+      }
+      const displayCreds = getDisplayCredentials();
+      return displayCreds.name;
+    }
     return username || userContext.user?.name || "Enter username";
+  };
+
+  const hasGoogleCredentials = () => {
+    const displayCreds = getDisplayCredentials();
+    return displayCreds.name !== 'User' || displayCreds.avatar !== null;
+  };
+
+  const getGoogleDisplayName = () => {
+    if (userContext.user?.name) {
+      return userContext.user.name;
+    }
+    const googleCreds = getGoogleCredentials();
+    return googleCreds?.name || "No Google name available";
   };
 
   if (isLoading) {
@@ -291,7 +319,7 @@ const UserProfilePage = () => {
                       Wallet Balance
                     </span>
                     <div className="text-lg font-bold text-purple-600">
-                    2.47 sol
+                      2.47 sol
                     </div>
                   </div>
                 </div>
@@ -316,7 +344,7 @@ const UserProfilePage = () => {
                     disabled={!isEditing}
                   />
                   <img
-                    src={userContext.user?.picture}
+                    src={getCurrentAvatar()}
                     alt="Google"
                     className="w-12 h-12 rounded-full"
                   />
@@ -325,7 +353,10 @@ const UserProfilePage = () => {
                       Use Google Profile Picture
                     </div>
                     <div className="text-sm text-gray-600">
-                      From your Google account
+                      {userContext.user?.picture ? "From your Google account" : "From saved Google credentials"}
+                      {!userContext.user?.picture && hasGoogleCredentials() && (
+                        <span className="text-gray-500 ml-1">(saved)</span>
+                      )}
                     </div>
                   </div>
                 </label>
@@ -392,7 +423,10 @@ const UserProfilePage = () => {
                       Use Google Name
                     </div>
                     <div className="text-sm text-gray-600">
-                      {userContext.user?.name}
+                      {getGoogleDisplayName()}
+                      {!userContext.user?.name && hasGoogleCredentials() && (
+                        <span className="text-gray-500 ml-1">(saved)</span>
+                      )}
                     </div>
                   </div>
                 </label>
