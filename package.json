@@ -12,7 +12,7 @@
   "dependencies": {
     "@civic/auth": "^0.5.4",
     "@civic/auth-web3": "^0.5.8",
-    "@vidbloq/react": "^0.1.6",
+    "@vidbloq/react": "^0.1.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",

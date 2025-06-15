@@ -13,8 +13,10 @@ import { getDisplayCredentials } from "../utils";
 
 const Prejoin = () => {
   const { publicKey } = useRequirePublicKey();
+   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const { nickname, setNickname, joinStream, isLoading } = usePrejoin({
     publicKey,
+    avatarUrl
   });
   const {
     streamMetadata: { creatorWallet, streamSessionType },
@@ -29,13 +31,14 @@ const Prejoin = () => {
       const displayCreds = getDisplayCredentials();
       setNickname(displayCreds.name);
       setHasInitialized(true);
+      setAvatarUrl(displayCreds.avatar || undefined);
       
       console.log('Auto-populated nickname from profile:', displayCreds.name, {
         isUsingGoogleName: displayCreds.isUsingGoogleName,
         hasCustomPreferences: displayCreds.hasCustomPreferences
       });
     }
-  }, [nickname, setNickname, hasInitialized]);
+  }, [nickname, setNickname, hasInitialized, setAvatarUrl]);
 
   return (
     <>
