@@ -13,9 +13,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 export default defineConfig({
   plugins: [
     react(),
-    // Add node polyfills plugin
     nodePolyfills({
-      // Whether to polyfill specific globals
       globals: {
         Buffer: true,
         global: true,

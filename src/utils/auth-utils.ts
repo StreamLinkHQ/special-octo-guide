@@ -44,6 +44,24 @@ export const saveUserPreferences = (preferences: UserPreferences) => {
   }
 };
 
+// Avatar options array - should match what's in your profile component
+const avatarOptions = [
+  "https://res.cloudinary.com/adaeze/image/upload/v1745406833/xgkbh9clm7lwcbb2rm0a.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745406532/oeqiov1ue5ylpythux6k.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404837/vaq22f4hotztogwlnhzq.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404827/qm3i1gdx1ub0bvntksiz.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404819/zhcxy9szj249qxft2fla.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404752/nfpwn5cy2tiklsmg9o5u.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404752/nfpwn5cy2tiklsmg9o5u.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404741/xio2cl8cj8em9cebtyyb.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404621/wwouagdzhxne70kkgaxv.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1745404606/dfzeavyyvmooxyys4knz.png",
+  "https://res.cloudinary.com/adaeze/image/upload/v1746917882/ihmztupdw0mgu6ma7v9s.png",
+];
+
+// Export function to get avatar options
+export const getAvatarOptions = () => avatarOptions;
+
 // Main function to get display credentials with proper priority
 export const getDisplayCredentials = (): DisplayCredentials => {
   const preferences = getUserPreferences();
@@ -57,7 +75,7 @@ export const getDisplayCredentials = (): DisplayCredentials => {
       
     const displayAvatar = preferences.useGoogleAvatar
       ? googleCreds?.picture || null
-      : null; // Will fall back to custom avatar selection
+      : avatarOptions[preferences.selectedAvatar] || avatarOptions[0]; // Use custom avatar
       
     return {
       name: displayName,
@@ -82,7 +100,7 @@ export const getDisplayCredentials = (): DisplayCredentials => {
   // Ultimate fallback
   return {
     name: 'User',
-    avatar: null,
+    avatar: avatarOptions[0], // Default to first avatar instead of null
     isUsingGoogleName: false,
     isUsingGoogleAvatar: false,
     hasCustomPreferences: false

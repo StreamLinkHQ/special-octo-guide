@@ -11,9 +11,10 @@ import {
   getGoogleCredentials, 
   getUserPreferences, 
   saveUserPreferences,
-  saveGoogleCredentials 
+  saveGoogleCredentials,
+  getAvatarOptions
 } from "../utils";
-import type { UserPreferences } from "../types/auth";
+import type { UserPreferences } from "../types";
 
 const UserProfilePage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(0);
@@ -27,21 +28,6 @@ const UserProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const userContext = useUser();
   const wallet = useWallet({ type: "solana" });
-
-
-  const avatarOptions = [
-    "https://res.cloudinary.com/adaeze/image/upload/v1745406833/xgkbh9clm7lwcbb2rm0a.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745406532/oeqiov1ue5ylpythux6k.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404837/vaq22f4hotztogwlnhzq.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404827/qm3i1gdx1ub0bvntksiz.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404819/zhcxy9szj249qxft2fla.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404752/nfpwn5cy2tiklsmg9o5u.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404752/nfpwn5cy2tiklsmg9o5u.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404741/xio2cl8cj8em9cebtyyb.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404621/wwouagdzhxne70kkgaxv.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745404606/dfzeavyyvmooxyys4knz.png",
-    "https://res.cloudinary.com/adaeze/image/upload/v1745917882/ihmztupdw0mgu6ma7v9s.png",
-  ];
 
   const statusOptions = [
     { value: "available", label: "Available", color: "bg-green-500" },
@@ -145,6 +131,8 @@ const UserProfilePage = () => {
   };
 
   const getCurrentAvatar = () => {
+    const avatarOptions = getAvatarOptions(); // Get from centralized location
+    
     if (useGoogleAvatar) {
       // First try current user context, then fallback to stored Google credentials
       if (userContext.user?.picture) {
@@ -367,7 +355,7 @@ const UserProfilePage = () => {
                   Or choose a custom avatar:
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {avatarOptions.map((avatar, index) => (
+                  {getAvatarOptions().map((avatar, index) => (
                     <button
                       key={index}
                       onClick={() => {

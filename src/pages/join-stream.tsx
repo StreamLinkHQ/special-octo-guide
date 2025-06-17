@@ -5,7 +5,6 @@ import { JoinStreamView } from "../components";
 const JoinStream = () => {
   const { id } = useParams();
 
-  console.log(id);
   return (
     <StreamRoom roomName={id as string}>
       <JoinStreamView />
