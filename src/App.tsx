@@ -9,8 +9,8 @@ function App() {
   return (
     <>
       <VidbloqProvider
-        apiKey="sk_5fa927d2ad021016ae36b2656fbf8085"
-        apiSecret="iO24O0xXjuXSsIhfLorPKRS2NvcWjbRswYLcnYAvxk4="
+        apiKey="sk_8f337b8a16c6c3519af1d98feaf4fe58"
+        apiSecret="7sL2hNTCTWhL8s1FpqOJNB6nimKyl5kBpuR/tzRnW24="
       >
         <BrowserRouter>
           <WalletProvider>
