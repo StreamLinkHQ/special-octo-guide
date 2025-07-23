@@ -2,8 +2,7 @@ import { RiLink } from "react-icons/ri";
 import { IoIosClose } from "react-icons/io";
 import { FiCopy } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { Modal } from "./ui";
-
+import { Modal } from "../ui";
 
 type Stream = {
   name: string;
