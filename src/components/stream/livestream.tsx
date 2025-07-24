@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, {
+import {
   type ReactElement,
   useState,
   useEffect,
@@ -13,13 +13,9 @@ import {
   SDKTrackSource,
   useStreamRoom,
   ParticipantSortStrategy,
-  useParticipantControls,
-  useParticipantData,
   type SDKParticipant,
 } from "@vidbloq/react";
-
-import { SendModal } from "../modals";
-
+import ParticipantTileContent from "./participant-tile";
 
 export default function LivestreamView() {
   const meeting = useStreamRoom({
@@ -252,23 +248,19 @@ export default function LivestreamView() {
                     className="w-full h-full object-cover"
                   />
 
-                  <LivestreamParticipantContent
+                  <ParticipantTileContent
                     participant={participant}
                     isLocal={isLocalParticipant}
                     isCameraOn={isCameraOn}
                     isMicrophoneOn={isMicrophoneOn}
-                    size={size}
-                    isMobile={isMobile}
                   />
                 </div>
               ) : (
-                <LivestreamParticipantContent
+                <ParticipantTileContent
                   participant={participant}
                   isLocal={isLocalParticipant}
                   isCameraOn={isCameraOn ?? false}
                   isMicrophoneOn={isMicrophoneOn}
-                  size={size}
-                  isMobile={isMobile}
                 />
               )}
             </div>
@@ -280,8 +272,8 @@ export default function LivestreamView() {
           <div
             className={`absolute ${
               isMobile
-                ? "top-1 right-1 px-1 py-0.5 text-xs"
-                : "top-2 right-2 px-2 py-1 text-xs"
+                ? "top-1 left-1 px-1 py-0.5 text-xs"
+                : "top-2 left-2 px-2 py-1 text-xs"
             } rounded-md text-white ${
               metadata.userType === "host"
                 ? "bg-purple-700"
@@ -489,241 +481,3 @@ export default function LivestreamView() {
     </div>
   );
 }
-
-// LivestreamParticipantContent component
-const LivestreamParticipantContent: React.FC<{
-  participant: SDKParticipant;
-  isLocal: boolean;
-  isCameraOn: boolean;
-  isMicrophoneOn: boolean;
-  size: "large" | "small" | "mobile";
-  isMobile: boolean;
-}> = ({ participant, isLocal, isCameraOn, isMicrophoneOn, size, isMobile }) => {
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
-
-  const controls = useParticipantControls({
-    participant,
-    isLocal,
-    isMicrophoneEnabled: isMicrophoneOn,
-    isCameraEnabled: isCameraOn,
-  });
-
-  const participantData = useParticipantData({
-    participant,
-  });
-
-  const handleGiftClick = () => {
-    const recipient = controls.prepareGiftRecipient();
-    if (recipient) {
-      setSelectedRecipient(recipient);
-      setShowSendModal(true);
-    } else {
-      console.error("Could not find wallet address for this participant");
-    }
-  };
-
-  const handleDemoteClick = async () => {
-    const result = await controls.demoteParticipant();
-    if (result.success) {
-      console.log(`${controls.participantMetadata.userName} returned to guest`);
-    } else {
-      console.error(result.error || "Failed to demote participant");
-    }
-  };
-
-  const getAvatarSize = () => {
-    if (size === "mobile" || size === "small" || isMobile) {
-      return "w-16 h-16";
-    }
-    return "w-24 h-24";
-  };
-
-  const getControlsScale = () => {
-    if (size === "mobile") return "scale-50 origin-top-left";
-    if (size === "small") return "scale-75 origin-top-left";
-    if (isMobile) return "scale-75 origin-top-left";
-    return "";
-  };
-
-  return (
-    <>
-      {!isCameraOn && (
-        // Camera off - show avatar view
-        <div className="relative w-full h-full overflow-hidden rounded-lg">
-          {/* Background with avatar */}
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${participantData.avatarUrl})`,
-              filter: "blur(8px)",
-              transform: "scale(1.3)",
-              opacity: "0.9",
-            }}
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-10" />
-
-          {/* Central avatar */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className={`${getAvatarSize()} rounded-full overflow-hidden`}>
-              {participantData.avatarUrl ? (
-                <img
-                  src={participantData.avatarUrl}
-                  alt={participantData.userName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-purple-500 flex items-center justify-center text-white font-semibold">
-                  {participantData.initials}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* User info - shown on both camera on/off states */}
-      <div className="absolute bottom-3 left-3 flex items-center space-x-2 bg-black bg-opacity-30 px-2 py-1 rounded-md z-10">
-        <div className="w-6 h-6 rounded-full overflow-hidden">
-          {participantData.avatarUrl ? (
-            <img
-              src={participantData.avatarUrl}
-              alt={participantData.userName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-purple-500 flex items-center justify-center text-white text-xs">
-              {participantData.initials}
-            </div>
-          )}
-        </div>
-        <span className="text-white text-sm">{participantData.userName}</span>
-      </div>
-
-      {/* Controls overlay */}
-      <div
-        className={`absolute top-2 left-2 flex items-center justify-between inset-x-2 z-10 ${getControlsScale()}`}
-      >
-        <div className="flex items-center gap-x-2">
-          {controls.canGift && (
-            <button
-              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:bg-primary-light"
-              onClick={handleGiftClick}
-            >
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </button>
-          )}
-
-          {controls.canDemote && (
-            <button
-              className={`w-8 h-8 rounded-full bg-red-500 flex items-center justify-center cursor-pointer hover:bg-red-600 ${
-                controls.isDemoting ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onClick={controls.isDemoting ? undefined : handleDemoteClick}
-              disabled={controls.isDemoting}
-            >
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-row items-center gap-x-2">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              controls.micEnabled ? "bg-primary" : "bg-gray-500 bg-opacity-60"
-            }`}
-          >
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {controls.micEnabled ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                />
-              )}
-            </svg>
-          </div>
-
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              controls.cameraEnabled
-                ? "bg-primary"
-                : "bg-gray-500 bg-opacity-60"
-            }`}
-          >
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {controls.cameraEnabled ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                />
-              )}
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Send Modal */}
-      {showSendModal && selectedRecipient && (
-        <SendModal
-          selectedUser={selectedRecipient}
-          closeFunc={() => {
-            setShowSendModal(false);
-            setSelectedRecipient(null);
-          }}
-        />
-      )}
-    </>
-  );
-};
