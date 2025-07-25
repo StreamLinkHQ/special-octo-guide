@@ -50,7 +50,7 @@ export type IconName =
   | "list"
   | "grid"
   | "userMinus"
-  | "link";
+  | "link" | "lightbulb" | "bug" | "improvement";
 
 export type IconPathsType = {
   [key in IconName]: IconPath;

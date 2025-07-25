@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useStreamContext } from "@vidbloq/react";
+import { StreamProvider } from "../../context";
+import { AddonIndicator, AgendaTabs } from "../agenda";
 import CallControls from "./call-controls";
 import Livestream from "./livestream";
 import Meeting from "./meeting";
 import RaisedHandCard from "./raised-hand";
 import RequestCard, { type GuestRequest } from "./request-card";
+
 
 const UserView = () => {
   const {
@@ -19,6 +22,7 @@ const UserView = () => {
   const [localGuestRequests, setLocalGuestRequests] = useState<GuestRequest[]>(
     []
   );
+  const [showAgenda, setShowAgenda] = useState<boolean>(false);
   const processedRequestIds = useRef(new Set<string>());
 
   // Track if component is mounted
@@ -112,14 +116,14 @@ const UserView = () => {
   };
 
   return (
-    <>
+    <StreamProvider>
       {streamMetadata?.streamSessionType === "meeting" ? (
         <Meeting />
       ) : (
         <Livestream />
       )}
       <div className="w-[90%] lg:w-[80%] mx-auto">
-        <CallControls />
+        <CallControls onAgendaToggle={() => setShowAgenda(true)} />
       </div>
       {userType === "host" && (
         <div className="absolute right-10 top-20 rounded">
@@ -147,7 +151,11 @@ const UserView = () => {
             ))}
           </div>
         )}
-    </>
+      {!showAgenda && (
+        <AddonIndicator onOpenModal={() => setShowAgenda(true)} />
+      )}
+      {showAgenda && <AgendaTabs closeFunc={() => setShowAgenda(false)} />}
+    </StreamProvider>
   );
 };
 
