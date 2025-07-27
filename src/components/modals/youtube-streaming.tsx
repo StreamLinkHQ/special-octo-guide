@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useStreamRecording } from "@vidbloq/react";
+import { useStreamRecordingYoutube } from "@vidbloq/react";
 import {
   FaCircleInfo,
   FaEye,
@@ -26,7 +26,7 @@ const YouTubeStreamingModal = ({
   const [isUrlVisible, setIsUrlVisible] = useState<boolean>(false);
 
   const { isRecording, isLoading, startRecording, stopRecording, error } =
-    useStreamRecording({ youtubeRtmpUrl: defaultYoutubeUrl });
+    useStreamRecordingYoutube({ youtubeRtmpUrl: defaultYoutubeUrl });
 
   const handleStartStreaming = async () => {
     if (!youtubeUrl.trim()) {

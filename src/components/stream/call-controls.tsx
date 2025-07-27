@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   useParticipantList,
   useStreamContext,
@@ -25,21 +25,23 @@ import Reactions from "./reactions";
 import ChatNotificationManager from "./chat-notification-manager";
 import Tooltip from "../ui/tooltip";
 
-export type CallControlsProps = {
+type CallControlsProps = {
   onRaiseHand?: () => void;
   onReturnToGuest?: () => void;
   onDisconnect?: () => void;
-  onAgendaToggle: () => void;
   onChatToggle?: () => void;
   onReactionsToggle?: () => void;
   onRecordToggle?: () => void;
+  onAgendaToggle: () => void;
+  showParticipantList: boolean;
+  setShowParticipantList: (show: boolean) => void;
 };
 
 /**
  * CallControls provides the UI for stream call controls
  * Uses the BaseCallControls headless component for functionality
  */
-const CallControls: React.FC<CallControlsProps> = ({
+const CallControls = ({
   onRaiseHand,
   onReturnToGuest,
   onDisconnect,
@@ -47,7 +49,9 @@ const CallControls: React.FC<CallControlsProps> = ({
   onChatToggle,
   onReactionsToggle,
   onRecordToggle,
-}) => {
+  showParticipantList,
+  setShowParticipantList,
+}: CallControlsProps) => {
   const { participants, count } = useParticipantList();
   const { streamMetadata } = useStreamContext();
 
@@ -58,8 +62,7 @@ const CallControls: React.FC<CallControlsProps> = ({
 
   const [showLink, setShowLink] = useState<boolean>(false);
   const [showChat, setShowChat] = useState<boolean>(false);
-  const [showParticipantList, setShowParticipantList] =
-    useState<boolean>(false);
+
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [showReactions, setShowReactions] = useState<boolean>(false);
   const [showYouTubeModal, setShowYouTubeModal] = useState<boolean>(false);

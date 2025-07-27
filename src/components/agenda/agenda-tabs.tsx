@@ -1,12 +1,23 @@
 import { useState, useEffect } from "react";
-import { useStreamContext, useRequirePublicKey } from "@vidbloq/react";
-import { FaPlus, FaList, FaVoteYea, FaQuestionCircle, FaBrain } from "react-icons/fa";
+import {
+  useStreamContext,
+  useRequirePublicKey,
+  type Agenda,
+} from "@vidbloq/react";
+import {
+  FaPlus,
+  FaList,
+  FaVoteYea,
+  FaQuestionCircle,
+  FaBrain,
+} from "react-icons/fa";
 import CreateAgenda from "./create-agenda";
 import PollTaker from "./poll-taker";
 import QuizTaker from "./quiz-taker";
 import AgendaItem from "./agenda-item";
 import AddonResponseViewer from "./addon-response-viewer";
 import { useStream } from "../../hooks";
+import EditAgendaModal from "./edit-agenda";
 
 interface AgendaTabsProps {
   closeFunc: () => void;
@@ -14,9 +25,11 @@ interface AgendaTabsProps {
 
 const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
   const [activeTab, setActiveTab] = useState<string>("");
-  const { 
-    agendas, 
-    isLoadingAgendas, 
+  const [editingAgenda, setEditingAgenda] = useState<Agenda | null>(null);
+
+  const {
+    agendas,
+    isLoadingAgendas,
     refetchAgendas,
     shouldShowParticipationTab,
     participationTabLabel,
@@ -40,12 +53,12 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     activeAddonType,
     activeTab,
     isHost,
-    hasExistingAgendas
+    hasExistingAgendas,
   });
 
   // Force sync addon state when modal opens
   useEffect(() => {
-    console.log('AgendaTabs mounted, syncing addon state');
+    console.log("AgendaTabs mounted, syncing addon state");
     syncAddonState();
   }, [syncAddonState]);
 
@@ -62,11 +75,27 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
   useEffect(() => {
     // If user is on participate tab but addon is no longer active
     if (activeTab === "participate" && !shouldShowParticipationTab) {
-      console.log("Addon stopped while user was on participate tab, redirecting...");
+      console.log(
+        "Addon stopped while user was on participate tab, redirecting..."
+      );
       // Redirect to existing agendas if available, otherwise stay on existing (will show empty state)
       setActiveTab("existing");
     }
   }, [activeTab, shouldShowParticipationTab]);
+
+  const handleEdit = (agenda: Agenda) => {
+    setEditingAgenda(agenda);
+  };
+
+  const handleDelete = async () => {
+    // The delete is handled in AgendaItem, just refresh after
+    refetchAgendas();
+  };
+
+  const handleEditSuccess = () => {
+    refetchAgendas();
+    setEditingAgenda(null);
+  };
 
   // Refresh agendas when tab changes to ensure sync
   useEffect(() => {
@@ -124,10 +153,10 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     if (shouldShowParticipationTab && !isHost) {
       // Use the dynamic icon mapping
       let iconComponent = <FaQuestionCircle className="w-4 h-4" />;
-      
-      if (activeAddonType === 'Poll') {
+
+      if (activeAddonType === "Poll") {
         iconComponent = <FaVoteYea className="w-4 h-4" />;
-      } else if (activeAddonType === 'Quiz') {
+      } else if (activeAddonType === "Quiz") {
         iconComponent = <FaBrain className="w-4 h-4" />;
       }
 
@@ -151,7 +180,9 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[70%] max-h-[80%] max-w-4xl p-6">
             <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Loading...</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Loading...
+              </h2>
               <p className="text-gray-600">Fetching agenda data...</p>
             </div>
           </div>
@@ -163,12 +194,13 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg w-[70%] max-h-[80%] max-w-4xl p-6">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">No Agenda Available</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              No Agenda Available
+            </h2>
             <p className="text-gray-600 mb-4">
-              {isHost 
+              {isHost
                 ? "Create your first agenda to get started."
-                : "No agendas are currently available for this stream."
-              }
+                : "No agendas are currently available for this stream."}
             </p>
             <button
               onClick={closeFunc}
@@ -186,14 +218,17 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     switch (activeTab) {
       case "create":
         return <CreateAgenda />;
-      
+
       case "existing":
         return (
           <div className="bg-white rounded-lg h-full p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Stream Agendas</h2>
+              <h2 className="text-xl font-semibold text-gray-800">
+                Stream Agendas
+              </h2>
               <span className="text-gray-400 text-sm">
-                {agendas?.length || 0} agenda{(agendas?.length || 0) !== 1 ? 's' : ''}
+                {agendas?.length || 0} agenda
+                {(agendas?.length || 0) !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -203,9 +238,12 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
                   <div className="absolute top-0 bottom-0 left-1.5 border-l border-dashed border-gray-200 z-0"></div>
                   {agendas?.map((item) => (
                     <div key={item.id} className="relative mb-4">
-                      <AgendaItem 
-                        item={item} 
+                      <AgendaItem
+                        item={item}
                         onViewResponses={handleViewResponses}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onRefresh={refetchAgendas}
                       />
                     </div>
                   ))}
@@ -227,35 +265,37 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
             )}
 
             <div className="mt-6 text-xs text-gray-500 text-center">
-              {isHost 
+              {isHost
                 ? "Click the menu on each agenda to start, edit, or delete it. Starting a new addon will automatically stop any currently active addon."
-                : "The host can start agendas for everyone to participate."
-              }
+                : "The host can start agendas for everyone to participate."}
             </div>
           </div>
         );
-      
+
       case "participate":
         // Render the appropriate participation component based on addon type
-        if (activeAddonType === 'Poll') {
+        if (activeAddonType === "Poll") {
           console.log("Rendering PollTaker in participate tab");
           return <PollTaker />;
-        } else if (activeAddonType === 'Quiz') {
+        } else if (activeAddonType === "Quiz") {
           console.log("Rendering QuizTaker in participate tab");
           return <QuizTaker />;
-        } else if (activeAddonType === 'Q&A') {
+        } else if (activeAddonType === "Q&A") {
           // Placeholder for Q&A component
           return (
             <div className="bg-white rounded-lg h-full p-6">
               <div className="text-center">
                 <FaQuestionCircle className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Q&A Session Active</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Q&A Session Active
+                </h2>
                 <p className="text-gray-600 mb-6">
                   The Q&A participation component is coming soon!
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-blue-800 text-sm">
-                    This feature is currently under development. You'll be able to ask questions and participate in discussions here.
+                    This feature is currently under development. You'll be able
+                    to ask questions and participate in discussions here.
                   </p>
                 </div>
               </div>
@@ -263,7 +303,7 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
           );
         }
         return null;
-      
+
       default:
         return null;
     }
@@ -283,7 +323,7 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
               ×
             </button>
           </div>
-          
+
           {/* Tabs */}
           <div className="flex space-x-1">
             {availableTabs.map((tab) => (
@@ -307,23 +347,26 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
         <div className="flex-1 overflow-hidden">
           {activeTab === "create" ? (
             // Create Agenda tab renders its own modal-like content
-            <div className="h-full">
-              {renderTabContent()}
-            </div>
+            <div className="h-full">{renderTabContent()}</div>
           ) : (
             // Other tabs render within the modal container
-            <div className="h-full p-6 overflow-auto">
-              {renderTabContent()}
-            </div>
+            <div className="h-full p-6 overflow-auto">{renderTabContent()}</div>
           )}
         </div>
       </div>
-      
+
       {/* Response Viewer Modal */}
-      <AddonResponseViewer 
+      <AddonResponseViewer
         agenda={viewingResponsesForAgenda}
         onClose={handleCloseResponseViewer}
       />
+      {editingAgenda && (
+        <EditAgendaModal
+          agenda={editingAgenda}
+          onClose={() => setEditingAgenda(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 };

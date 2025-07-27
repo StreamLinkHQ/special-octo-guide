@@ -19,14 +19,20 @@ interface SubmitPollVoteRequest {
 }
 
 const PollTaker = () => {
-  const { getAgenda, agenda, isLoading: agendaLoading } = useGetAgenda();
+  const { getAgenda, agenda: fetchedAgenda, isLoading: agendaLoading } = useGetAgenda();
   const { submitPollVote, isLoading: submitting } = useSubmitPollVote();
   const { publicKey } = useRequirePublicKey();
   const { 
     activeAgendaId, 
     activeAddonType,
-    isParticipationAvailable 
+    isParticipationAvailable,
+    preloadedPollData,
+    isPreloadingPoll
   } = useStream();
+
+  // Use preloaded data if available, otherwise use fetched data
+  const agenda = preloadedPollData || fetchedAgenda;
+  const isLoading = isPreloadingPoll || agendaLoading;
 
   // State management (simplified - no need to manage addon state here)
   const [selectedOption, setSelectedOption] = useState<string>('');
@@ -34,6 +40,7 @@ const PollTaker = () => {
   const [submissionResponse, setSubmissionResponse] = useState<PollVoteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  const [hasInitialized, setHasInitialized] = useState<boolean>(false);
   
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -49,7 +56,8 @@ const PollTaker = () => {
     activeAddonType,
     isParticipationAvailable,
     agenda: !!agenda,
-    options: options.length
+    options: options.length,
+    isUsingPreloadedData: !!preloadedPollData
   });
 
   // Timer effects - must be called before any conditional returns
@@ -91,10 +99,18 @@ const PollTaker = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Fetch agenda data when activeAgendaId changes
+  // Fetch agenda data when activeAgendaId changes and no preloaded data exists
   useEffect(() => {
-    if (activeAgendaId) {
+    if (activeAgendaId && !preloadedPollData && !hasInitialized) {
       fetchAgendaData();
+      setHasInitialized(true);
+    }
+  }, [activeAgendaId, preloadedPollData, hasInitialized]);
+
+  // Reset initialization flag when agenda changes
+  useEffect(() => {
+    if (!activeAgendaId) {
+      setHasInitialized(false);
     }
   }, [activeAgendaId]);
 
@@ -185,12 +201,14 @@ const PollTaker = () => {
   };
 
   // Show loading state
-  if (agendaLoading || (!agenda && activeAgendaId)) {
+  if (isLoading || (!agenda && activeAgendaId)) {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
         <div className="text-center">
           <FiLoader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading poll...</p>
+          <p className="text-gray-600">
+            {isPreloadingPoll ? "Preparing poll..." : "Loading poll..."}
+          </p>
         </div>
       </div>
     );
@@ -304,7 +322,7 @@ const PollTaker = () => {
         {/* Poll Options */}
         <div className="p-6">
           <div className="space-y-4 mb-6">
-            {options.map((option, index) => {
+            {options.map((option:string, index: number) => {
               const isSelected = selectedOption === option;
               const isDisabled = hasSubmitted || isPollExpired;
               

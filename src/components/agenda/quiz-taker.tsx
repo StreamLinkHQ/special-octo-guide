@@ -7,14 +7,20 @@ import {
 import { useStream } from "../../hooks";
 
 const QuizTaker = () => {
-  const { getQuizQuestions, quiz, isLoading: quizLoading } = useGetQuizQuestions();
+  const { getQuizQuestions, quiz: fetchedQuiz, isLoading: quizLoading } = useGetQuizQuestions();
   const { submitQuizAnswers } = useSubmitQuizAnswers();
   const { publicKey } = useRequirePublicKey();
   const { 
     activeAgendaId, 
     activeAddonType,
-    isParticipationAvailable 
+    isParticipationAvailable,
+    preloadedQuizData,
+    isPreloadingQuiz
   } = useStream();
+  
+  // Use preloaded data if available, otherwise use fetched data
+  const quiz = preloadedQuizData || fetchedQuiz;
+  const isLoading = isPreloadingQuiz || quizLoading;
   
   const questions = useMemo(() => quiz?.questions || [], [quiz]);
 
@@ -23,7 +29,7 @@ const QuizTaker = () => {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [showResults, setShowResults] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -35,7 +41,8 @@ const QuizTaker = () => {
     activeAddonType,
     isParticipationAvailable,
     quiz: !!quiz,
-    questionsCount: questions.length
+    questionsCount: questions.length,
+    isUsingPreloadedData: !!preloadedQuizData
   });
 
   // Calculate total possible points
@@ -82,10 +89,23 @@ const QuizTaker = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Fetch quiz data when activeAgendaId changes
+  // Fetch quiz data when activeAgendaId changes and no preloaded data exists
   useEffect(() => {
-    if (activeAgendaId) {
+    if (activeAgendaId && !preloadedQuizData && !hasInitialized) {
       fetchQuizData();
+      setHasInitialized(true);
+    }
+  }, [activeAgendaId, preloadedQuizData, hasInitialized]);
+
+  // Reset initialization flag when agenda changes
+  useEffect(() => {
+    if (!activeAgendaId) {
+      setHasInitialized(false);
+      // Reset quiz state when agenda changes
+      setQuizStarted(false);
+      setShowResults(false);
+      setAnswers({});
+      setCurrentQuestionIndex(0);
     }
   }, [activeAgendaId]);
 
@@ -99,15 +119,12 @@ const QuizTaker = () => {
     if (!activeAgendaId) return;
 
     console.log("Fetching quiz data for agenda:", activeAgendaId);
-    setIsLoading(true);
 
     try {
       await getQuizQuestions(activeAgendaId);
       console.log("Quiz data fetched successfully");
     } catch (error) {
       console.error("Error fetching quiz data:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -203,11 +220,13 @@ const QuizTaker = () => {
   };
 
   // Show loading state
-  if (isLoading || quizLoading || (!quiz && activeAgendaId)) {
+  if (isLoading || (!quiz && activeAgendaId)) {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <p className="text-gray-600">Loading quiz...</p>
+          <p className="text-gray-600">
+            {isPreloadingQuiz ? "Preparing quiz..." : "Loading quiz..."}
+          </p>
         </div>
       </div>
     );
@@ -286,7 +305,7 @@ const QuizTaker = () => {
           </div>
 
           <div className="space-y-4 mb-6">
-            {questions.map((question, index) => {
+            {questions.map((question, index: number) => {
               const userAnswer = answers[question.id] || "";
               const isCorrect =
                 userAnswer.toLowerCase().trim() ===
@@ -389,7 +408,7 @@ const QuizTaker = () => {
         {/* Multiple choice */}
         {currentQuestion.isMultiChoice && currentQuestion.options.length > 0 ? (
           <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
+            {currentQuestion.options.map((option: string, index: number) => (
               <label
                 key={index}
                 className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"

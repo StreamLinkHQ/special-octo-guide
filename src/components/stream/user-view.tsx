@@ -8,7 +8,6 @@ import Meeting from "./meeting";
 import RaisedHandCard from "./raised-hand";
 import RequestCard, { type GuestRequest } from "./request-card";
 
-
 const UserView = () => {
   const {
     streamMetadata,
@@ -23,6 +22,8 @@ const UserView = () => {
     []
   );
   const [showAgenda, setShowAgenda] = useState<boolean>(false);
+  const [showParticipantList, setShowParticipantList] =
+    useState<boolean>(false);
   const processedRequestIds = useRef(new Set<string>());
 
   // Track if component is mounted
@@ -118,12 +119,16 @@ const UserView = () => {
   return (
     <StreamProvider>
       {streamMetadata?.streamSessionType === "meeting" ? (
-        <Meeting />
+        <Meeting setShowParticipantList={() => setShowParticipantList(true)} />
       ) : (
         <Livestream />
       )}
       <div className="w-[90%] lg:w-[80%] mx-auto">
-        <CallControls onAgendaToggle={() => setShowAgenda(true)} />
+        <CallControls
+          onAgendaToggle={() => setShowAgenda(true)}
+          showParticipantList={showParticipantList}
+          setShowParticipantList={setShowParticipantList}
+        />
       </div>
       {userType === "host" && (
         <div className="absolute right-10 top-20 rounded">

@@ -10,7 +10,12 @@ import {
 } from "@vidbloq/react";
 import ParticipantTileContent from "./participant-tile";
 
-export default function MeetingView() {
+
+type MeetingViewProps = {
+  setShowParticipantList: () => void;
+}
+export default function MeetingView({ setShowParticipantList }: MeetingViewProps) {
+  // Initialize the meeting room with default sort
   const meeting = useStreamRoom({
     defaultSortStrategy: ParticipantSortStrategy.ROLE_BASED,
     enableSpeakerEvents: true,
@@ -167,7 +172,7 @@ export default function MeetingView() {
     return (
       <div
         className="flex flex-col items-center justify-center bg-white bg-opacity-10 rounded-lg p-4 h-full w-full cursor-pointer"
-        onClick={() => alert("clicked")}
+        onClick={setShowParticipantList}
       >
         <div className="flex mb-2">
           {displayedAvatars.map((participant, index) => {
