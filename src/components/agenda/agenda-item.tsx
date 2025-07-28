@@ -17,7 +17,7 @@ type AgendaItemProps = {
 };
 
 const AgendaItem = ({ item, onEdit, onDelete, onViewResponses, onRefresh }: AgendaItemProps) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [_isOpen, setIsOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const { startAddon, stopAddon, activeAddons } = useStreamAddons();
   const { publicKey } = useRequirePublicKey();

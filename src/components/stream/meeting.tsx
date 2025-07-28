@@ -107,24 +107,23 @@ export default function MeetingView({ setShowParticipantList }: MeetingViewProps
   };
 
   // Determine layout type
-  const calculateLayoutType = () => {
-    if (meeting.tracks.screenShare) {
-      return "screenshare";
-    }
+  // const calculateLayoutType = () => {
+  //   if (meeting.tracks.screenShare) {
+  //     return "screenshare";
+  //   }
 
-    if (allParticipants.length === 1) {
-      return "single-participant";
-    }
+  //   if (allParticipants.length === 1) {
+  //     return "single-participant";
+  //   }
 
-    if (allParticipants.length === 2) {
-      return "two-participants";
-    }
+  //   if (allParticipants.length === 2) {
+  //     return "two-participants";
+  //   }
 
-    return "multi-participant";
-  };
+  //   return "multi-participant";
+  // };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const layoutType = calculateLayoutType();
+  // const layoutType = calculateLayoutType();
 
   // Get bottom row participants for screen share layout
   const getBottomRowParticipants = (): SDKParticipant[] => {

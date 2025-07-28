@@ -299,8 +299,11 @@ export default function LivestreamView() {
   );
 
   // Check if this is window share (special handling)
-  const isWindowShare =
-    screenShareTrack && !screenShareTrack.publication?.dimensions?.width;
+  // const isWindowShare =
+  //   screenShareTrack && !screenShareTrack.publication?.dimensions?.width;
+  
+   const isWindowShare =
+    screenShareTrack && !screenShareTrack.publication;
 
   return (
     <div className={`w-full h-full`}>
