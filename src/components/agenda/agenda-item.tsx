@@ -332,7 +332,7 @@ const AgendaItemMenu = ({
           />
           <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20 min-w-[140px]">
             {/* Edit - disabled for completed items */}
-            {/* <div
+            <div
               onClick={!item.isCompleted ? onEdit : undefined}
               className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
                 item.isCompleted 
@@ -342,7 +342,7 @@ const AgendaItemMenu = ({
             >
               <CiEdit />
               Edit
-            </div> */}
+            </div>
             
             {/* View Responses - only show if addon is active or completed */}
             {(isCurrentlyActive || item.isCompleted) && (

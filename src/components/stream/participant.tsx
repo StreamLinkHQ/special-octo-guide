@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { type Participant } from "@vidbloq/react";
 import { Icon } from "../icons";
+import { useWallet } from "@civic/auth-web3/react";
 
 type ParticipantSmallProps = {
   participant: Participant;
@@ -10,7 +11,10 @@ type ParticipantSmallProps = {
 const ParticipantSmall = ({ participant, onSendClick }: ParticipantSmallProps) => {
   const { userName, avatarUrl } = participant;
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  
+  const wallet = useWallet({ type: "solana" });
+
+  const isCurrentUser = wallet?.address !== participant.walletAddress;
+
   const handleClick = () => {
     setShowDropdown(!showDropdown);
   };
@@ -43,7 +47,7 @@ const ParticipantSmall = ({ participant, onSendClick }: ParticipantSmallProps) =
         <p className="text-sm">@{userName}</p>
       </div>
       
-      {showDropdown && (
+      {showDropdown && isCurrentUser && (
         <>
           <div 
             className="fixed inset-0 z-10" 
