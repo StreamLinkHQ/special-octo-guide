@@ -53,7 +53,7 @@ const ChatModal = ({ participants, isOpen, onClose }: ChatModalProps) => {
     });
     
     // Second pass: handle www. URLs
-    processedText = processedText.replace(wwwRegex, (match, prefix, url) => {
+    processedText = processedText.replace(wwwRegex, (_match, prefix, url) => {
       return `${prefix}__LINK_START__https://${url}__LINK_MIDDLE__${url}__LINK_END__`;
     });
     

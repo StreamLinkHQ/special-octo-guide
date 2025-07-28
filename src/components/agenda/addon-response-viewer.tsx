@@ -35,7 +35,7 @@ const AddonResponseViewer: React.FC<AddonResponseViewerProps> = ({
         return <FaPoll className="w-6 h-6 text-green-600" />;
       case 'Quiz':
         return <FaBrain className="w-6 h-6 text-purple-600" />;
-      case 'Q&A':
+      case 'Q_A':
         return <FaQuestionCircle className="w-6 h-6 text-blue-600" />;
       default:
         return <FaQuestionCircle className="w-6 h-6 text-gray-600" />;
@@ -48,7 +48,7 @@ const AddonResponseViewer: React.FC<AddonResponseViewerProps> = ({
         return 'from-green-50 to-green-100 border-green-200';
       case 'Quiz':
         return 'from-purple-50 to-purple-100 border-purple-200';
-      case 'Q&A':
+      case 'Q_A':
         return 'from-blue-50 to-blue-100 border-blue-200';
       default:
         return 'from-gray-50 to-gray-100 border-gray-200';
@@ -86,7 +86,7 @@ const AddonResponseViewer: React.FC<AddonResponseViewerProps> = ({
           </div>
         );
       
-      case 'Q&A':
+      case 'Q_A':
         // Placeholder for Q&A results
         return (
           <div className="max-w-4xl mx-auto p-6">
