@@ -337,7 +337,7 @@ const FeatureModal = ({ isOpen, onClose }: FeatureModalProps) => {
                     ) : (
                       <>
                         <span className="text-sm">📤</span>
-                        <span className="hidden sm:inline">Submit Feedback</span>
+                        <span className="hidden sm:!inline">Submit Feedback</span>
                         <span className="sm:hidden">Submit</span>
                       </>
                     )}
