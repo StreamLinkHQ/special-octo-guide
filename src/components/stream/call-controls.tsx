@@ -20,7 +20,7 @@ import {
   YouTubeStreamingModal,
   FeatureModal,
 } from "../modals";
-import { ShareModal, isMobileDevice } from "@vidbloq/react";
+import { ShareModal } from "@vidbloq/react";
 import Reactions from "./reactions";
 import ChatNotificationManager from "./chat-notification-manager";
 import Tooltip from "../ui/tooltip";
@@ -154,287 +154,288 @@ const CallControls = ({
               <Modal
                 onClose={() => setShowMobileMenu(false)}
                 position="bottom"
-                childClassName="bg-[var(--sdk-bg-primary-color)] h-auto w-full rounded-t-xl"
+                childClassName="bg-white h-auto w-full rounded-t-3xl shadow-2xl"
               >
-                <div className="flex flex-row justify-between items-center w-[88%] mx-auto p-2">
-                  <div
-                    className="bg-[var(--sdk-bg-primary-color)] border flex flex-row lg:hidden items-center justify-between p-0.5 rounded-2xl gap-x-2 cursor-pointer"
-                    onClick={() => {
-                      setShowMobileMenu(false);
-                      setShowParticipantList(true);
-                    }}
-                  >
-                    <span>{count}</span>
-                    <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                      <Icon name="users" className="text-primary" />
-                    </div>
-                  </div>
-                  <div
-                    className="bg-[var(--sdk-bg-primary-color)] border flex flex-row items-center justify-between p-0.5 rounded-2xl gap-x-2 cursor-pointer"
-                    onClick={() => {
-                      setShowMobileMenu(false);
-                      setShowLink(true);
-                    }}
-                  >
-                    <Icon name="circle" className="text-[#F5F5F5]" size={12} />
-                    <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                      <Icon name="link" className="text-primary" />
-                    </div>
-                  </div>
-                  <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[50px] w-[50px]">
-                    <div
-                      className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center"
-                      onClick={onAgendaToggle}
+                <div className="w-full px-4 pb-8 pt-6">
+                  {/* Modal handle */}
+                  <div className="w-12 h-1 bg-gray-500 rounded-full mx-auto mb-6"></div>
+                  
+                  <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+                    {/* Participants */}
+                    <button
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        setShowParticipantList(true);
+                      }}
                     >
-                      {/* <Icon name="smiley" className="text-yellow-400" /> */}
-                       <TfiAgenda className="text-primary text-xl" />
-                    </div>
-                  </div>
-                  <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[50px] w-[50px]">
-                    <div
-                      className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center"
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                          <Icon name="users" className="text-[#8b5cf6] w-6 h-6" />
+                        </div>
+                        <span className="absolute -top-1 -right-1 bg-[#8b5cf6] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                          {count}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-600">Participants</span>
+                    </button>
+
+                    {/* Share Link */}
+                    <button
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        setShowLink(true);
+                      }}
+                    >
+                      <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                        <Icon name="link" className="text-[#8b5cf6] w-6 h-6" />
+                      </div>
+                      <span className="text-xs text-gray-600">Share</span>
+                    </button>
+
+                    {/* Agenda */}
+                    <button
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        onAgendaToggle();
+                      }}
+                    >
+                      <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                        <TfiAgenda className="text-[#8b5cf6] text-xl" />
+                      </div>
+                      <span className="text-xs text-gray-600">Agenda</span>
+                    </button>
+
+                    {/* Chat */}
+                    <button
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
                       onClick={() => {
                         setShowMobileMenu(false);
                         handleOpenChat();
                       }}
                     >
-                      <Icon name="chat" className="text-primary" />
-                    </div>
-                  </div>
-                  {/* YouTube Streaming in mobile menu */}
-                  {userType === "host" && (
-                    <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[50px] w-[50px]">
-                      <div
-                        className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center"
+                      <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                        <Icon name="chat" className="text-[#8b5cf6] w-6 h-6" />
+                      </div>
+                      <span className="text-xs text-gray-600">Chat</span>
+                    </button>
+
+                    {/* YouTube Streaming - Only for hosts */}
+                    {userType === "host" && (
+                      <button
+                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
                         onClick={() => {
                           setShowMobileMenu(false);
                           handleYouTubeModalToggle();
                         }}
                       >
-                        <Icon name="video" className="text-red-600" />
-                      </div>
-                    </div>
-                  )}
-                  {/* Feature suggestion in mobile menu */}
-                  <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[50px] w-[50px]">
-                    <div
-                      className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center"
+                        <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center">
+                          <Icon name="video" className="text-red-500 w-6 h-6" />
+                        </div>
+                        <span className="text-xs text-gray-600">YouTube</span>
+                      </button>
+                    )}
+
+                    {/* Feature Suggestion */}
+                    <button
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
                       onClick={() => {
                         setShowMobileMenu(false);
                         handleFeatureModalToggle();
                       }}
                     >
-                      {/* <Icon name="lightbulb" className="text-primary" /> */}
-                      <FaRegLightbulb className="text-primary" />
-                    </div>
+                      <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                        <FaRegLightbulb className="text-[#8b5cf6] text-xl" />
+                      </div>
+                      <span className="text-xs text-gray-600">Suggest</span>
+                    </button>
                   </div>
                 </div>
               </Modal>
             )}
 
             {/* Main Controls UI */}
-            <div className={`w-full max-6xl mx-auto`}>
-              <div className="flex items-center justify-between">
-                {/* Left group - Link and Menu icons */}
-                <div className="bg-[#F2EFFE] rounded-full lg:py-2 lg:px-3 flex items-center space-x-2">
-                  <Tooltip content="Share link">
-                    <div
-                      className="bg-[var(--sdk-bg-primary-color)] hidden lg:flex flex-row items-center justify-between p-0.5 rounded-2xl gap-x-2 cursor-pointer"
+            <div className="w-full px-2 sm:px-4 py-3">
+              <div className="flex items-center justify-between max-w-7xl mx-auto">
+                {/* Left Section - Desktop only */}
+                <div className="hidden lg:flex items-center gap-3">
+                  {/* Participants Count */}
+                  <Tooltip content="View participants">
+                    <button
+                      className="flex items-center gap-2 h-10 px-3 bg-gray-100 backdrop-blur-sm rounded-xl shadow-sm hover:bg-gray-200 transition-all duration-200"
+                      onClick={() => setShowParticipantList(true)}
+                    >
+                      <Icon name="users" className="text-[#8b5cf6] w-5 h-5" />
+                      <span className="font-medium text-sm text-gray-700">{count}</span>
+                    </button>
+                  </Tooltip>
+
+                  {/* Share Link */}
+                  <Tooltip content="Share meeting link">
+                    <button
+                      className="flex items-center justify-center w-10 h-10 bg-gray-100 backdrop-blur-sm rounded-xl shadow-sm hover:bg-gray-200 transition-all duration-200"
                       onClick={() => setShowLink(true)}
                     >
-                      <Icon
-                        name="circle"
-                        className="text-[#F5F5F5]"
-                        size={12}
-                      />
-                      <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                        <Icon name="link" className="text-primary" />
-                      </div>
-                    </div>
+                      <Icon name="link" className="text-[#8b5cf6] w-5 h-5" />
+                    </button>
                   </Tooltip>
-                  <Tooltip content="Suggest Feature">
-                    <div
-                      className="bg-[var(--sdk-bg-primary-color)] hidden lg:flex cursor-pointer flex-row items-center justify-between p-0.5 rounded-2xl gap-x-2"
+
+                  {/* Feature Suggestion */}
+                  <Tooltip content="Suggest a feature">
+                    <button
+                      className="flex items-center justify-center w-10 h-10 bg-gray-100 backdrop-blur-sm rounded-xl shadow-sm hover:bg-gray-200 transition-all duration-200"
                       onClick={handleFeatureModalToggle}
                     >
-                      <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                        {/* <Icon name="lightbulb" className="text-primary" /> */}
-                        <FaRegLightbulb className="text-primary" />
-                      </div>
-                    </div>
+                      <FaRegLightbulb className="text-[#8b5cf6] w-5 h-5" />
+                    </button>
                   </Tooltip>
-                  <div
-                    className="bg-[var(--sdk-bg-primary-color)] hidden lg:flex flex-row items-center justify-between p-0.5 rounded-2xl gap-x-2 cursor-pointer"
-                    onClick={() => setShowParticipantList(true)}
-                  >
-                    <span>{count}</span>
-                    <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                      <Icon name="users" className="text-primary" />
-                    </div>
-                  </div>
                 </div>
 
-                {/* Record/YouTube Streaming button */}
-                <div className="hidden lg:block">
+                {/* Center Section - Main Controls */}
+                <div className="flex items-center gap-2 mx-auto lg:mx-0">
+                  {/* Main control pill */}
+                  <div className="flex items-center bg-gray-100 backdrop-blur-sm rounded-2xl shadow-lg px-1 py-1">
+                    {/* Raise hand for LIVESTREAMS */}
+                    {streamMetadata?.streamSessionType === "livestream" &&
+                      isGuest &&
+                      !canAccessMediaControls &&
+                      !hasPendingRequest &&
+                      requestToSpeak && (
+                        <button
+                          className="p-3 rounded-xl hover:bg-gray-200 transition-colors relative group"
+                          onClick={requestToSpeak}
+                        >
+                          <Icon name="hand" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                        </button>
+                      )}
+
+                    {streamMetadata?.streamSessionType === "livestream" &&
+                      isGuest &&
+                      !canAccessMediaControls &&
+                      hasPendingRequest && (
+                        <button className="p-3 rounded-xl bg-green-100 relative">
+                          <Icon name="hand" className="text-green-600 w-5 h-5 animate-pulse" />
+                        </button>
+                      )}
+
+                    {/* Raise hand for MEETINGS */}
+                    {streamMetadata?.streamSessionType === "meeting" &&
+                      canRaiseHand &&
+                      !isHandRaised &&
+                      raiseHand && (
+                        <button
+                          className="p-3 rounded-xl hover:bg-gray-200 transition-colors relative group"
+                          onClick={raiseHand}
+                          title="Raise hand to speak"
+                        >
+                          <Icon name="hand" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                        </button>
+                      )}
+
+                    {streamMetadata?.streamSessionType === "meeting" &&
+                      canRaiseHand &&
+                      isHandRaised &&
+                      lowerHand && (
+                        <button
+                          className="p-3 rounded-xl bg-[#8b5cf6]/10 relative"
+                          onClick={lowerHand}
+                          title="Lower hand"
+                        >
+                          <Icon name="hand" className="text-[#8b5cf6] w-5 h-5 animate-pulse" />
+                        </button>
+                      )}
+
+                    {/* Agenda - Hidden on mobile */}
+                    <button 
+                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:block group"
+                      onClick={onAgendaToggle}
+                    >
+                      <TfiAgenda className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                    </button>
+
+                    {/* Screen share - Hidden on mobile */}
+                    {canAccessMediaControls && toggleScreenShare && (
+                      <div className="hidden lg:block">
+                        <ScreenShareControl showLabel={false} />
+                      </div>
+                    )}
+
+                    {/* Microphone */}
+                    {canAccessMediaControls && toggleMic && (
+                      <MicrophoneControl showLabel={false} />
+                    )}
+
+                    {/* Camera */}
+                    {canAccessMediaControls && toggleCamera && (
+                      <CameraControl
+                        showLabel={false}
+                        onError={(error) => console.error("Camera error:", error)}
+                      />
+                    )}
+
+                    {/* Reactions */}
+                    <button
+                      className={`p-3 rounded-xl transition-all duration-200 ${
+                        showReactions
+                          ? "bg-[#8b5cf6]/10"
+                          : "hover:bg-gray-200"
+                      }`}
+                      onClick={handleReactionsToggle}
+                    >
+                      <Icon 
+                        name="smiley" 
+                        className={`w-5 h-5 ${
+                          showReactions ? "text-yellow-500" : "text-yellow-500"
+                        }`} 
+                      />
+                    </button>
+
+                    {/* Chat - Hidden on mobile */}
+                    <button
+                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:block group"
+                      onClick={handleOpenChat}
+                    >
+                      <Icon name="chat" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                    </button>
+
+                    {/* Mobile menu button */}
+                    <button
+                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors lg:hidden"
+                      onClick={() => setShowMobileMenu(true)}
+                    >
+                      <Icon name="more" className="text-gray-600 w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* End call button */}
+                  {handleDisconnectClick && (
+                    <button
+                      className="flex items-center gap-2 px-4 py-3 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-2xl shadow-lg transition-all duration-200 group"
+                      onClick={handleDisconnectClick}
+                    >
+                      <Icon name="phone" className="w-5 h-5 rotate-135 group-hover:rotate-180 transition-transform" />
+                      <span className="hidden sm:block text-sm font-medium">End</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Right Section - Desktop only */}
+                <div className="hidden lg:flex items-center gap-3">
+                  {/* YouTube Streaming */}
                   {userType === "host" && (
                     <Tooltip content="Stream to YouTube">
-                      <div
-                        className="bg-red-600 hover:bg-red-700 rounded-2xl p-2 cursor-pointer flex items-center gap-2 text-white"
+                      <button
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                         onClick={handleYouTubeModalToggle}
                       >
-                        <Icon name="video" className="text-white" size={16} />
-                        <span className="text-sm">YouTube</span>
-                      </div>
+                        <Icon name="video" className="w-5 h-5" />
+                        <span className="text-sm font-medium">YouTube</span>
+                      </button>
                     </Tooltip>
                   )}
                 </div>
-
-                {/* Icon group - main middle section */}
-                <div className="bg-secondary-light [#F2EFFE] rounded-full py-2 px-3 flex items-center space-x-2">
-                  {/* Raise hand for LIVESTREAMS (existing logic) */}
-                  {streamMetadata?.streamSessionType === "livestream" &&
-                    isGuest &&
-                    !canAccessMediaControls &&
-                    !hasPendingRequest &&
-                    requestToSpeak && (
-                      <div
-                        className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px]"
-                        onClick={requestToSpeak}
-                      >
-                        <div className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center">
-                          <Icon name="hand" className="text-primary" />
-                        </div>
-                      </div>
-                    )}
-
-                  {streamMetadata?.streamSessionType === "livestream" &&
-                    isGuest &&
-                    !canAccessMediaControls &&
-                    hasPendingRequest && (
-                      <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px]">
-                        <div className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center">
-                          <Icon name="hand" className="text-green-500" />
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Raise hand for MEETINGS (new logic) */}
-                  {streamMetadata?.streamSessionType === "meeting" &&
-                    canRaiseHand &&
-                    !isHandRaised &&
-                    raiseHand && (
-                      <div
-                        className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px]"
-                        onClick={raiseHand}
-                        title="Raise hand to speak"
-                      >
-                        <div className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center">
-                          <Icon name="hand" className="text-primary" />
-                        </div>
-                      </div>
-                    )}
-
-                  {streamMetadata?.streamSessionType === "meeting" &&
-                    canRaiseHand &&
-                    isHandRaised &&
-                    lowerHand && (
-                      <div
-                        className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px]"
-                        onClick={lowerHand}
-                        title="Lower hand"
-                      >
-                        <div className="bg-primary rounded-2xl h-full flex flex-col items-center justify-center">
-                          <Icon
-                            name="hand"
-                            className="text-white animate-pulse"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  <div className="bg-[var(--sdk-bg-primary-color)] p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px] hidden lg:flex items-center justify-center flex-col" onClick={onAgendaToggle}>
-                    <TfiAgenda className="text-primary text-xl" />
-                  </div>
-
-                  {/* Screen share */}
-                  {canAccessMediaControls &&
-                    !isMobileDevice() &&
-                    toggleScreenShare && (
-                      <ScreenShareControl
-                        showLabel={false}
-                        onChange={() => toggleScreenShare()}
-                      />
-                    )}
-
-                  {/* Microphone */}
-                  {canAccessMediaControls && toggleMic && (
-                    <MicrophoneControl showLabel={false} />
-                  )}
-
-                  {/* Camera */}
-                  {canAccessMediaControls && toggleCamera && (
-                    <CameraControl
-                      showLabel={false}
-                      onError={(error) => console.error("Camera error:", error)}
-                    />
-                  )}
-
-                  {/* Reactions */}
-                  <div
-                    className={`p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px] ${
-                      showReactions
-                        ? "bg-primary"
-                        : "bg-[var(--sdk-bg-primary-color)]"
-                    } `}
-                  >
-                    <div
-                      className={` rounded-2xl h-full flex flex-col items-center justify-center
-                        ${showReactions ? "bg-primary" : "bg-[#DCCCF63D]"}
-                        `}
-                      onClick={handleReactionsToggle}
-                    >
-                      <Icon name="smiley" className="text-yellow-400" />
-                    </div>
-                  </div>
-
-                  <div
-                    className="bg-[var(--sdk-bg-primary-color)] border flex flex-row lg:hidden items-center justify-between p-0.5 rounded-2xl gap-x-2 cursor-pointer"
-                    onClick={() => setShowMobileMenu(true)}
-                  >
-                    <Icon
-                      name="circle"
-                      className="text-[#F5F5F5] hidden"
-                      size={12}
-                    />
-                    <div className="bg-[#DCCCF63D] p-2 rounded-xl">
-                      <Icon name="more" className="text-primary" />
-                    </div>
-                  </div>
-
-                  {/* Chat */}
-                  <div
-                    className="bg-[var(--sdk-bg-primary-color)] hidden lg:block p-0.5 rounded-2xl cursor-pointer h-[44px] w-[44px]"
-                    onClick={handleOpenChat}
-                  >
-                    <div className="bg-[#DCCCF63D] rounded-2xl h-full flex flex-col items-center justify-center">
-                      <Icon name="chat" className="text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* End call button */}
-                {handleDisconnectClick && (
-                  <div
-                    className="rounded-2xl p-0.5 bg-[#D40000] flex flex-row text-white items-center gap-x-2 cursor-pointer"
-                    onClick={handleDisconnectClick}
-                  >
-                    <>
-                      <span className="ml-2 hidden lg:block">End</span>
-                      <div className="rounded-2xl bg-[#FF5555] p-2">
-                        <Icon name="phone" className="text-white" />
-                      </div>
-                    </>
-                  </div>
-                )}
               </div>
             </div>
           </>
