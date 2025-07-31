@@ -296,7 +296,7 @@ const CallControls = ({
                 {/* Center Section - Main Controls */}
                 <div className="flex items-center gap-2 mx-auto lg:mx-0">
                   {/* Main control pill */}
-                  <div className="flex items-center bg-gray-100 backdrop-blur-sm rounded-2xl shadow-lg px-1 py-1">
+                  <div className="flex items-center lg:!gap-x-3 bg-gray-100  gap-x-1.5 backdrop-blur-sm rounded-2xl shadow-lg px-1 py-1">
                     {/* Raise hand for LIVESTREAMS */}
                     {streamMetadata?.streamSessionType === "livestream" &&
                       isGuest &&

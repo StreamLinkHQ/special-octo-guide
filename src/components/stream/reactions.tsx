@@ -3,7 +3,7 @@ import { useCallReactions, useStreamContext, type Participant } from "@vidbloq/r
 
 type ReactionProps = {
   showReactions: boolean;
-  localParticipant?: Participant; // Made optional since it might be undefined
+  localParticipant?: Participant;
 };
 
 interface AnimatedReaction {
@@ -27,68 +27,64 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
   const [animatedReactions, setAnimatedReactions] = useState<AnimatedReaction[]>([]);
   const { nickname } = useStreamContext();
   const containerRef = useRef<HTMLDivElement>(null);
-  // Use localParticipant id if available, otherwise fallback to nickname or "Unknown"
   const sender = localParticipant?.userName || nickname || localParticipant?.id || "Unknown";
   const processedReactionIds = useRef<Set<string>>(new Set());
   
   // Available reactions
   const reactionEmojis = ["👍", "👎", "❤️", "🎉", "👏", "🔥", "😂", "🙌", "😮", "😭"];
 
-  // Debug mode - set to true to see connection status
+  // Debug mode
   const DEBUG_MODE = false;
+
+  // Responsive helper to check screen size
+  const getDeviceType = () => {
+    const width = window.innerWidth;
+    if (width < 640) return 'mobile';
+    if (width < 1024) return 'tablet';
+    return 'desktop';
+  };
 
   const getRandomPosition = (): number => {
     if (!containerRef.current) {
-      // Default safe position if container not ready
       return window.innerWidth / 2 - 40;
     }
     
     const containerWidth = containerRef.current.offsetWidth;
-    const reactionWidth = 80; // Approximate width of reaction element
-    const margin = 20; // Safety margin from edges
+    const deviceType = getDeviceType();
     
-    // Ensure position is within visible bounds
+    // Adjust reaction width based on device
+    const reactionWidth = deviceType === 'mobile' ? 60 : 80;
+    const margin = deviceType === 'mobile' ? 10 : 20;
+    
     const minPosition = margin;
     const maxPosition = containerWidth - reactionWidth - margin;
     
-    // Clamp the random position within bounds
     const randomPosition = minPosition + Math.random() * (maxPosition - minPosition);
     
-    // Extra safety check
     return Math.max(minPosition, Math.min(randomPosition, maxPosition));
   };
 
-  // Track the last processed reaction to handle only new ones
   const lastReactionRef = useRef<string | null>(null);
 
-  // Handle incoming reactions and create animated versions
   useEffect(() => {
     if (reactions.length === 0) return;
 
-    // Get only the latest reaction
     const latestReaction = reactions[reactions.length - 1] as ReactionData;
     
-    // Create a consistent ID for the reaction
     const reactionId = latestReaction.id || 
       `${latestReaction.reaction}-${latestReaction.sender}-${latestReaction.timestamp || Date.now()}`;
 
-    // Skip if this is the same as the last processed reaction
     if (lastReactionRef.current === reactionId) {
       return;
     }
 
-    // Skip if we've already processed this reaction
     if (processedReactionIds.current.has(reactionId)) {
       return;
     }
 
-    // Update last processed reaction
     lastReactionRef.current = reactionId;
-
-    // Mark as processed
     processedReactionIds.current.add(reactionId);
 
-    // Create animated reaction
     const animatedReaction: AnimatedReaction = {
       id: reactionId,
       reaction: latestReaction.reaction,
@@ -98,33 +94,26 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
       timestamp: latestReaction.timestamp || Date.now(),
     };
 
-    // Add to animated reactions
     setAnimatedReactions((prev) => [...prev, animatedReaction]);
 
-    // Remove after animation
     const timeoutId = setTimeout(() => {
       setAnimatedReactions((prev) =>
         prev.filter((r) => r.id !== reactionId)
       );
       
-      // Clean up processed IDs after a delay
       setTimeout(() => {
         processedReactionIds.current.delete(reactionId);
       }, 1000);
     }, 4000);
 
-    // Cleanup timeout on unmount
     return () => clearTimeout(timeoutId);
   }, [reactions]);
 
-  // Track last click time to prevent rapid clicks
   const lastClickTime = useRef<number>(0);
 
-  // Handle sending a reaction (without optimistic updates to avoid duplicates)
   const handleSendReaction = useCallback((emoji: string) => {
     const now = Date.now();
     
-    // Prevent rapid clicks (debounce)
     if (now - lastClickTime.current < 300) {
       return;
     }
@@ -134,7 +123,6 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
     sendReaction(emoji, sender);
   }, [sender, sendReaction]);
 
-  // Clean up old reactions periodically
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -142,7 +130,6 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
         prev.filter(r => now - r.timestamp < 5000)
       );
       
-      // Clean up old processed IDs
       if (processedReactionIds.current.size > 100) {
         processedReactionIds.current.clear();
       }
@@ -151,7 +138,6 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       processedReactionIds.current.clear();
@@ -161,9 +147,17 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
     };
   }, []);
 
+  // Get responsive emoji size
+  const getEmojiSize = () => {
+    const deviceType = getDeviceType();
+    if (deviceType === 'mobile') return 'text-2xl';
+    if (deviceType === 'tablet') return 'text-3xl';
+    return 'text-3xl';
+  };
+
   return (
     <>
-      {/* Debug info - only visible when DEBUG_MODE is true */}
+      {/* Debug info */}
       {DEBUG_MODE && (
         <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50">
           <div>WebSocket: {isConnected ? '✅ Connected' : '❌ Disconnected'}</div>
@@ -178,8 +172,8 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
         ref={containerRef}
         className="absolute bottom-0 left-0 right-0 overflow-hidden pointer-events-none"
         style={{ 
-          height: "calc(100vh - 200px)", // Leave space for controls
-          maxHeight: "600px", // Reasonable max height
+          height: "calc(100vh - 150px)", // Adjusted for mobile
+          maxHeight: window.innerWidth < 640 ? "400px" : "600px", // Smaller max height on mobile
           zIndex: 50 
         }}
       >
@@ -189,7 +183,7 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
             className="absolute reaction-wrapper"
             style={{
               left: `${reaction.position}px`,
-              bottom: "20px", // Start position
+              bottom: "20px",
               opacity: reaction.opacity,
               transform: "translateY(0)",
               animation: "reaction-float 4s ease-out forwards",
@@ -197,10 +191,13 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
             }}
           >
             <div className="flex flex-col items-center">
-              <span className="text-3xl reaction-emoji" style={{ animation: "scale-bounce 0.5s ease-out" }}>
+              <span 
+                className={`${getEmojiSize()} reaction-emoji`} 
+                style={{ animation: "scale-bounce 0.5s ease-out" }}
+              >
                 {reaction.reaction}
               </span>
-              <span className="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded-full mt-1 whitespace-nowrap">
+              <span className="text-xs text-white bg-black bg-opacity-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full mt-1 whitespace-nowrap max-w-[80px] truncate">
                 {sender === reaction.sender ? "You" : reaction.sender}
               </span>
             </div>
@@ -208,21 +205,34 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
         ))}
       </div>
 
-      {/* Reaction panel - only visible when activated */}
+      {/* Reaction panel - responsive */}
       {showReactions && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-800 bg-opacity-90 rounded-full p-2 flex space-x-2 z-20 shadow-lg">
-          {reactionEmojis.map((emoji) => (
-            <button
-              key={emoji}
-              className="w-10 h-10 rounded-full hover:bg-gray-700 flex items-center justify-center text-xl transition-all hover:scale-110 active:scale-95"
-              onClick={() => handleSendReaction(emoji)}
-              aria-label={`Send ${emoji} reaction`}
-            >
-              {emoji}
-            </button>
-          ))}
+        <div className="fixed bottom-16 sm:bottom-20 lg:bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="bg-gray-800 bg-opacity-90 rounded-full p-1.5 sm:p-2 shadow-lg">
+            {/* Mobile view - two rows */}
+            <div className="flex overflow-x-auto justify-center gap-1 sm:!gap-2 lg:flex-nowrap max-w-[280px] sm:!max-w-none">
+              {reactionEmojis.map((emoji, index) => (
+                <button
+                  key={emoji}
+                  className={`
+                    w-8 h-8 sm:w-10 sm:h-10 
+                    rounded-full hover:bg-gray-700 
+                    flex items-center justify-center 
+                    text-base sm:text-xl 
+                    transition-all hover:scale-110 active:scale-95
+                    ${index < 5 ? '' : 'mt-1 sm:mt-0'}
+                  `}
+                  onClick={() => handleSendReaction(emoji)}
+                  aria-label={`Send ${emoji} reaction`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
+
     </>
   );
 };
