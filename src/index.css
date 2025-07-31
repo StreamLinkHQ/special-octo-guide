@@ -70,3 +70,57 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+
+      
+        @keyframes reaction-float {
+          0% {
+            transform: translateY(0) scale(0.5);
+            opacity: 0;
+          }
+          15% {
+            transform: translateY(-20px) scale(1);
+            opacity: 1;
+          }
+          85% {
+            transform: translateY(-300px) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-400px) scale(0.8);
+            opacity: 0;
+          }
+        }
+
+        @keyframes scale-bounce {
+          0% {
+            transform: scale(0);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 640px) {
+          @keyframes reaction-float {
+            0% {
+              transform: translateY(0) scale(0.5);
+              opacity: 0;
+            }
+            15% {
+              transform: translateY(-15px) scale(1);
+              opacity: 1;
+            }
+            85% {
+              transform: translateY(-200px) scale(1);
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(-250px) scale(0.8);
+              opacity: 0;
+            }
+          }
+        }
