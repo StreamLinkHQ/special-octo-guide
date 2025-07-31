@@ -33,10 +33,11 @@ const CreateAgenda = () => {
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string>("");
+  const [showMobileTypeSelector, setShowMobileTypeSelector] = useState(false);
   const [formData, setFormData] = useState<AgendaFormData>({
     timeStamp: 0,
     title: "",
-    duration: undefined, // Remove default value
+    duration: undefined,
   });
   const [pollOptions, setPollOptions] = useState<PollOption[]>([
     { id: "1", text: "" },
@@ -293,12 +294,10 @@ const CreateAgenda = () => {
       }
 
       case AgendaAction.Q_A: {
-        // Topic is optional, will use title if not provided
         break;
       }
 
       case AgendaAction.Custom: {
-        // Title is required, custom data is optional
         break;
       }
     }
@@ -373,7 +372,7 @@ const CreateAgenda = () => {
       action: selectedType!,
       title: formData.title?.trim(),
       description: formData.description?.trim(),
-      duration: formData.duration, // Keep as number, no default
+      duration: formData.duration,
     };
 
     let newAgenda: AgendaItem;
@@ -458,6 +457,7 @@ const CreateAgenda = () => {
         ],
       },
     ]);
+    setShowMobileTypeSelector(false);
   };
 
   const handleSubmitAll = () => {
@@ -467,10 +467,9 @@ const CreateAgenda = () => {
       return;
     }
 
-    // Convert duration to string for API compatibility
     const agendasForAPI = agendaItems.map((item) => ({
       ...item,
-      duration: item.duration, // Convert number to string
+      duration: item.duration,
     }));
 
     createAgenda({
@@ -478,6 +477,13 @@ const CreateAgenda = () => {
       wallet: publicKey?.toString(),
       agendas: agendasForAPI,
     });
+  };
+
+  const handleSelectType = (type: AgendaAction) => {
+    setSelectedType(type);
+    setEditingId(null);
+    setValidationError("");
+    setShowMobileTypeSelector(false);
   };
 
   const selectedAgendaType = agendaTypes.find(
@@ -489,19 +495,19 @@ const CreateAgenda = () => {
 
     return (
       <div
-        className={`bg-white rounded-2xl shadow-lg border-2 ${selectedAgendaType?.borderColor} p-8 animate-fadeIn`}
+        className={`bg-white rounded-xl sm:!rounded-2xl shadow-lg border-2 ${selectedAgendaType?.borderColor} p-4 sm:!p-6 lg:!p-8 animate-fadeIn`}
       >
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center mb-4 sm:!mb-6 lg:!mb-8">
+          <div className="flex items-center gap-2 sm:!gap-3">
             {selectedAgendaType && (
               <selectedAgendaType.icon
-                className={`text-2xl ${selectedAgendaType.color.replace(
+                className={`text-xl sm:!text-2xl ${selectedAgendaType.color.replace(
                   "bg-",
                   "text-"
                 )}`}
               />
             )}
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-lg sm:!text-xl lg:!text-2xl font-bold text-gray-800">
               {editingId ? "Edit" : "Create"} {selectedAgendaType?.label} Agenda
             </h2>
           </div>
@@ -536,22 +542,22 @@ const CreateAgenda = () => {
         </div>
 
         {validationError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700 animate-shake">
+          <div className="mb-4 sm:!mb-6 p-3 sm:!p-4 bg-red-50 border border-red-200 rounded-lg sm:!rounded-xl flex items-center gap-2 sm:!gap-3 text-red-700 animate-shake">
             <FaCircle size={8} />
-            <span className="font-medium">{validationError}</span>
+            <span className="text-sm sm:!text-base font-medium">{validationError}</span>
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:!space-y-6">
           {/* General Section */}
-          <div className={`p-6 rounded-xl ${selectedAgendaType?.lightColor}`}>
-            <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+          <div className={`p-4 sm:!p-6 rounded-lg sm:!rounded-xl ${selectedAgendaType?.lightColor}`}>
+            <h3 className="text-xs sm:!text-sm font-semibold text-gray-700 mb-3 sm:!mb-4 uppercase tracking-wide">
               General Information
             </h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:!grid-cols-2 gap-3 sm:!gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                   <FaClock className="inline mr-1" size={14} />
                   Start Time (minutes)
                 </label>
@@ -567,13 +573,13 @@ const CreateAgenda = () => {
                       });
                     }
                   }}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-3 sm:!px-4 py-2 text-sm sm:!text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="0"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                   Duration (minutes)
                 </label>
                 <input
@@ -593,15 +599,15 @@ const CreateAgenda = () => {
                       });
                     }
                   }}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-3 sm:!px-4 py-2 text-sm sm:!text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="Optional"
                 />
               </div>
             </div>
 
-            <div className="mt-4 space-y-4">
+            <div className="mt-3 sm:!mt-4 space-y-3 sm:!space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                   Title *
                 </label>
                 <input
@@ -611,12 +617,12 @@ const CreateAgenda = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                   Description
                 </label>
                 <textarea
@@ -625,7 +631,7 @@ const CreateAgenda = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors resize-none"
+                  className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors resize-none"
                   rows={3}
                 />
               </div>
@@ -634,17 +640,17 @@ const CreateAgenda = () => {
 
           {/* Poll Form */}
           {selectedType === AgendaAction.Poll && (
-            <div className="p-6 bg-blue-50 rounded-xl">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+            <div className="p-4 sm:!p-6 bg-blue-50 rounded-lg sm:!rounded-xl">
+              <h3 className="text-xs sm:!text-sm font-semibold text-gray-700 mb-3 sm:!mb-4 uppercase tracking-wide">
                 Poll Options
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:!space-y-3">
                 {pollOptions.map((option, index) => (
                   <div
                     key={option.id}
-                    className="flex items-center gap-3 group"
+                    className="flex items-center gap-2 sm:!gap-3 group"
                   >
-                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="w-6 h-6 sm:!w-8 sm:!h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:!text-sm font-bold flex-shrink-0">
                       {index + 1}
                     </div>
                     <input
@@ -654,23 +660,23 @@ const CreateAgenda = () => {
                       onChange={(e) =>
                         handlePollOptionChange(option.id, e.target.value)
                       }
-                      className="flex-1 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                      className="flex-1 px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                     />
                     {pollOptions.length > 2 && (
                       <button
                         onClick={() => handleRemovePollOption(option.id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 sm:!p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <FaRegTrashCan size={18} />
+                        <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                       </button>
                     )}
                   </div>
                 ))}
                 <button
                   onClick={handleAddPollOption}
-                  className="mt-3 w-full py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 font-medium"
+                  className="mt-2 sm:!mt-3 w-full py-2 sm:!py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-sm sm:!text-base font-medium"
                 >
-                  <FaPlus size={16} />
+                  <FaPlus size={14} className="sm:!w-4 sm:!h-4" />
                   Add Option
                 </button>
               </div>
@@ -679,12 +685,12 @@ const CreateAgenda = () => {
 
           {/* Q&A Form */}
           {selectedType === AgendaAction.Q_A && (
-            <div className="p-6 bg-green-50 rounded-xl">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+            <div className="p-4 sm:!p-6 bg-green-50 rounded-lg sm:!rounded-xl">
+              <h3 className="text-xs sm:!text-sm font-semibold text-gray-700 mb-3 sm:!mb-4 uppercase tracking-wide">
                 Q&A Configuration
               </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                   Discussion Topic
                 </label>
                 <input
@@ -694,9 +700,9 @@ const CreateAgenda = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, topic: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                  className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
                 />
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-xs sm:!text-sm text-gray-600">
                   This will open a Q&A session where participants can ask
                   questions and engage in discussion.
                 </p>
@@ -706,27 +712,27 @@ const CreateAgenda = () => {
 
           {/* Quiz Form */}
           {selectedType === AgendaAction.Quiz && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:!space-y-6">
               {quizQuestions.map((question, qIndex) => (
                 <div
                   key={question.id}
-                  className="p-6 bg-purple-50 rounded-xl border-2 border-purple-200"
+                  className="p-4 sm:!p-6 bg-purple-50 rounded-lg sm:!rounded-xl border-2 border-purple-200"
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="font-bold text-lg text-gray-800">
+                  <div className="flex justify-between items-center mb-4 sm:!mb-6">
+                    <h4 className="font-bold text-base sm:!text-lg text-gray-800">
                       Question {qIndex + 1}
                     </h4>
                     {quizQuestions.length > 1 && (
                       <button
                         onClick={() => handleRemoveQuizQuestion(question.id)}
-                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-all"
+                        className="text-red-500 hover:text-red-700 p-1.5 sm:!p-2 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <FaRegTrashCan size={18} />
+                        <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                       </button>
                     )}
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:!space-y-4">
                     <input
                       type="text"
                       placeholder="Enter your question..."
@@ -738,42 +744,42 @@ const CreateAgenda = () => {
                           e.target.value
                         )
                       }
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors font-medium"
+                      className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors font-medium"
                     />
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:!grid-cols-2 gap-4 sm:!gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                        <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-2 sm:!mb-3">
                           Question Type
                         </label>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                          <label className="flex items-center gap-2 sm:!gap-3 p-2 sm:!p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                             <input
                               type="radio"
                               checked={!question.isMultiChoice}
                               onChange={() =>
                                 handleQuizTypeChange(question.id, false)
                               }
-                              className="w-4 h-4 text-purple-600"
+                              className="w-3 h-3 sm:!w-4 sm:!h-4 text-purple-600"
                             />
-                            <span className="font-medium">Text Answer</span>
+                            <span className="text-sm sm:!text-base font-medium">Text Answer</span>
                           </label>
-                          <label className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                          <label className="flex items-center gap-2 sm:!gap-3 p-2 sm:!p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                             <input
                               type="radio"
                               checked={question.isMultiChoice}
                               onChange={() =>
                                 handleQuizTypeChange(question.id, true)
                               }
-                              className="w-4 h-4 text-purple-600"
+                              className="w-3 h-3 sm:!w-4 sm:!h-4 text-purple-600"
                             />
-                            <span className="font-medium">Multiple Choice</span>
+                            <span className="text-sm sm:!text-base font-medium">Multiple Choice</span>
                           </label>
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                           Points Value
                         </label>
                         <input
@@ -789,7 +795,7 @@ const CreateAgenda = () => {
                               );
                             }
                           }}
-                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                          className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                           placeholder="10"
                         />
                       </div>
@@ -797,14 +803,14 @@ const CreateAgenda = () => {
 
                     {question.isMultiChoice ? (
                       <div>
-                        <div className="text-sm font-medium text-gray-700 mb-3">
+                        <div className="text-xs sm:!text-sm font-medium text-gray-700 mb-2 sm:!mb-3">
                           Answer Options (select the correct one)
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:!space-y-3">
                           {question.answers.map((answer, aIndex) => (
                             <div
                               key={answer.id}
-                              className="flex items-center gap-3 group"
+                              className="flex items-center gap-2 sm:!gap-3 group"
                             >
                               <input
                                 type="radio"
@@ -817,7 +823,7 @@ const CreateAgenda = () => {
                                     answer.id
                                   )
                                 }
-                                className="w-5 h-5 text-purple-600"
+                                className="w-4 h-4 sm:!w-5 sm:!h-5 text-purple-600 flex-shrink-0"
                               />
                               <input
                                 type="text"
@@ -830,7 +836,7 @@ const CreateAgenda = () => {
                                     e.target.value
                                   )
                                 }
-                                className="flex-1 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                                className="flex-1 px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                               />
                               {question.answers.length > 2 && (
                                 <button
@@ -840,25 +846,25 @@ const CreateAgenda = () => {
                                       answer.id
                                     )
                                   }
-                                  className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  className="opacity-0 group-hover:opacity-100 p-1.5 sm:!p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                 >
-                                  <FaRegTrashCan size={18} />
+                                  <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                                 </button>
                               )}
                             </div>
                           ))}
                           <button
                             onClick={() => handleAddQuizAnswer(question.id)}
-                            className="mt-3 w-full py-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 font-medium"
+                            className="mt-2 sm:!mt-3 w-full py-2 sm:!py-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm sm:!text-base font-medium"
                           >
-                            <FaPlus size={16} />
+                            <FaPlus size={14} className="sm:!w-4 sm:!h-4" />
                             Add Answer Option
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:!text-sm font-medium text-gray-700 mb-1 sm:!mb-2">
                           Correct Answer
                         </label>
                         <input
@@ -872,7 +878,7 @@ const CreateAgenda = () => {
                               e.target.value
                             )
                           }
-                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                          className="w-full px-3 sm:!px-4 py-2 sm:!py-3 text-sm sm:!text-base bg-white border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                         />
                       </div>
                     )}
@@ -882,9 +888,9 @@ const CreateAgenda = () => {
 
               <button
                 onClick={handleAddQuizQuestion}
-                className="w-full py-4 border-2 border-dashed border-purple-300 rounded-xl text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 font-medium text-lg"
+                className="w-full py-3 sm:!py-4 border-2 border-dashed border-purple-300 rounded-lg sm:!rounded-xl text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm sm:!text-base lg:!text-lg font-medium"
               >
-                <FaPlus size={18} />
+                <FaPlus size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                 Add Another Question
               </button>
             </div>
@@ -892,11 +898,11 @@ const CreateAgenda = () => {
 
           {/* Custom Form */}
           {selectedType === AgendaAction.Custom && (
-            <div className="p-6 bg-pink-50 rounded-xl">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
+            <div className="p-4 sm:!p-6 bg-pink-50 rounded-lg sm:!rounded-xl">
+              <h3 className="text-xs sm:!text-sm font-semibold text-gray-700 mb-3 sm:!mb-4 uppercase tracking-wide">
                 Custom Agenda
               </h3>
-              <div className="text-sm text-gray-600 bg-white p-4 rounded-lg border border-pink-200">
+              <div className="text-xs sm:!text-sm text-gray-600 bg-white p-3 sm:!p-4 rounded-lg border border-pink-200">
                 <p className="mb-2">
                   ✨ Create a custom agenda item with your own content.
                 </p>
@@ -911,10 +917,10 @@ const CreateAgenda = () => {
           {/* Submit Button */}
           <button
             onClick={handleSubmit}
-            className={`w-full py-4 ${selectedAgendaType?.color} text-white rounded-xl font-semibold hover:opacity-90 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-3 text-lg shadow-lg`}
+            className={`w-full py-3 sm:!py-4 ${selectedAgendaType?.color} text-white rounded-lg sm:!rounded-xl font-semibold hover:opacity-90 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 sm:!gap-3 text-sm sm:!text-base lg:!text-lg shadow-lg`}
           >
             {editingId ? "Update Agenda" : "Add to Timeline"}
-            <FaCheck size={18} />
+            <FaCheck size={16} className="sm:!w-[18px] sm:!h-[18px]" />
           </button>
         </div>
       </div>
@@ -923,20 +929,93 @@ const CreateAgenda = () => {
 
   return (
     <>
-      <div className="h-full overflow-auto p-8 bg-gray-50">
+      <div className="h-full overflow-auto p-4 sm:!p-6 lg:!p-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="mb-4 sm:!mb-6 lg:!mb-8">
+            <h1 className="text-xl sm:!text-2xl lg:!text-3xl font-bold text-gray-800 mb-1 sm:!mb-2">
               Create Stream Agenda
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:!text-base text-gray-600">
               Design interactive experiences for your audience
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Agenda Type Selection */}
-            <div className="lg:col-span-1">
+          {/* Mobile Type Selector Button */}
+          <div className="lg:!hidden mb-4">
+            {selectedType ? (
+              <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  {selectedAgendaType && (
+                    <>
+                      <selectedAgendaType.icon
+                        size={20}
+                        className={selectedAgendaType.color.replace("bg-", "text-")}
+                      />
+                      <span className="font-medium">{selectedAgendaType.label}</span>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowMobileTypeSelector(true)}
+                  className="text-sm text-purple-600 font-medium"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowMobileTypeSelector(true)}
+                className="w-full bg-purple-600 text-white rounded-lg p-3 font-medium flex items-center justify-center gap-2"
+              >
+                <FaPlus size={16} />
+                Select Agenda Type
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Type Selector Modal */}
+          {showMobileTypeSelector && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end lg:!hidden">
+              <div className="bg-white w-full rounded-t-2xl p-6 animate-slide-up">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Choose Agenda Type</h2>
+                  <button
+                    onClick={() => setShowMobileTypeSelector(false)}
+                    className="text-gray-400"
+                  >
+                    <FaRegTrashCan size={20} />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {agendaTypes.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <button
+                        key={type.type}
+                        onClick={() => handleSelectType(type.type)}
+                        className={`w-full p-4 rounded-xl transition-all ${
+                          selectedType === type.type
+                            ? `${type.color} text-white shadow-lg`
+                            : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon size={24} />
+                          <span className="font-semibold text-lg">
+                            {type.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:!grid-cols-3 gap-6 lg:!gap-8">
+            {/* Desktop Agenda Type Selection */}
+            <div className="hidden lg:!block lg:!col-span-1">
               <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-0">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6">
                   Choose Agenda Type
@@ -982,37 +1061,37 @@ const CreateAgenda = () => {
             </div>
 
             {/* Form Area */}
-            <div className="lg:col-span-2">
+            <div className="lg:!col-span-2">
               {selectedType ? (
                 renderForm()
               ) : (
-                <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <div className="hidden lg:!block bg-white rounded-2xl shadow-lg p-8 sm:!p-12 text-center">
                   <div className="max-w-md mx-auto">
-                    <IoSparkles className="text-6xl text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+                    <IoSparkles className="text-5xl sm:!text-6xl text-purple-400 mx-auto mb-4" />
+                    <h3 className="text-xl sm:!text-2xl font-semibold text-gray-800 mb-4">
                       Ready to create something amazing?
                     </h3>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-sm sm:!text-base text-gray-600 mb-6">
                       Select an agenda type from the left to start building
                       interactive experiences for your stream.
                     </p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="grid grid-cols-2 gap-3 sm:!gap-4 text-xs sm:!text-sm">
+                      <div className="p-3 sm:!p-4 bg-blue-50 rounded-lg">
                         <FaList className="text-blue-500 mb-2" size={20} />
                         <p className="font-medium text-gray-700">Polls</p>
                         <p className="text-gray-600">Get instant feedback</p>
                       </div>
-                      <div className="p-4 bg-green-50 rounded-lg">
+                      <div className="p-3 sm:!p-4 bg-green-50 rounded-lg">
                         <FaComments className="text-green-500 mb-2" size={20} />
                         <p className="font-medium text-gray-700">Q&A</p>
                         <p className="text-gray-600">Engage in discussion</p>
                       </div>
-                      <div className="p-4 bg-purple-50 rounded-lg">
+                      <div className="p-3 sm:!p-4 bg-purple-50 rounded-lg">
                         <FaBrain className="text-purple-500 mb-2" size={20} />
                         <p className="font-medium text-gray-700">Quiz</p>
                         <p className="text-gray-600">Test knowledge</p>
                       </div>
-                      <div className="p-4 bg-pink-50 rounded-lg">
+                      <div className="p-3 sm:!p-4 bg-pink-50 rounded-lg">
                         <IoSparkles className="text-pink-500 mb-2" size={20} />
                         <p className="font-medium text-gray-700">Custom</p>
                         <p className="text-gray-600">Your creativity</p>
@@ -1026,32 +1105,32 @@ const CreateAgenda = () => {
 
           {/* Timeline Preview */}
           {agendaItems.length > 0 && (
-            <div className="mt-12">
-              <div className="bg-white rounded-2xl shadow-lg p-8">
-                <div className="flex justify-between items-center mb-8">
+            <div className="mt-8 sm:!mt-12">
+              <div className="bg-white rounded-xl sm:!rounded-2xl shadow-lg p-4 sm:!p-6 lg:!p-8">
+                <div className="flex flex-col sm:!flex-row justify-between items-start sm:!items-center mb-6 sm:!mb-8 gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800">
+                    <h2 className="text-xl sm:!text-2xl font-bold text-gray-800">
                       Timeline Preview
                     </h2>
-                    <p className="text-gray-600 mt-1">
+                    <p className="text-sm sm:!text-base text-gray-600 mt-1">
                       {agendaItems.length} agenda item
                       {agendaItems.length !== 1 ? "s" : ""} created
                     </p>
                   </div>
                   <button
                     onClick={handleSubmitAll}
-                    className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-[1.02] flex items-center gap-3 shadow-lg"
+                    className="w-full sm:!w-auto px-6 sm:!px-8 py-2.5 sm:!py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:!rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 sm:!gap-3 shadow-lg text-sm sm:!text-base"
                   >
-                    <FaCheck size={18} />
+                    <FaCheck size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                     Publish All Agendas
                   </button>
                 </div>
 
                 <div className="relative">
                   {/* Timeline line */}
-                  <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
+                  <div className="absolute left-6 sm:!left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:!space-y-6">
                     {agendaItems
                       .sort((a, b) => a.timeStamp - b.timeStamp)
                       .map((item) => {
@@ -1063,28 +1142,28 @@ const CreateAgenda = () => {
                         return (
                           <div
                             key={item.id}
-                            className="relative flex items-start gap-6 group"
+                            className="relative flex items-start gap-3 sm:!gap-6 group"
                           >
                             {/* Timeline dot */}
                             <div
-                              className={`relative z-10 w-16 h-16 ${agendaType?.color} rounded-full flex items-center justify-center text-white shadow-lg transform transition-transform group-hover:scale-110`}
+                              className={`relative z-10 w-12 h-12 sm:!w-16 sm:!h-16 ${agendaType?.color} rounded-full flex items-center justify-center text-white shadow-lg transform transition-transform group-hover:scale-110 flex-shrink-0`}
                             >
-                              <Icon size={24} />
+                              <Icon size={window.innerWidth < 640 ? 20 : 24} />
                             </div>
 
                             {/* Content card */}
                             <div
-                              className={`flex-1 p-6 bg-white rounded-xl border-2 ${agendaType?.borderColor} hover:shadow-lg transition-all`}
+                              className={`flex-1 p-4 sm:!p-6 bg-white rounded-lg sm:!rounded-xl border-2 ${agendaType?.borderColor} hover:shadow-lg transition-all`}
                             >
-                              <div className="flex items-start justify-between">
+                              <div className="flex flex-col sm:!flex-row sm:!items-start sm:!justify-between gap-2">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-wrap items-center gap-2 sm:!gap-3 mb-2">
                                     <span
-                                      className={`text-xs font-bold px-3 py-1 ${agendaType?.color} text-white rounded-full`}
+                                      className={`text-xs font-bold px-2 sm:!px-3 py-1 ${agendaType?.color} text-white rounded-full`}
                                     >
                                       {item.action}
                                     </span>
-                                    <span className="text-sm font-medium text-purple-600">
+                                    <span className="text-xs sm:!text-sm font-medium text-purple-600">
                                       <FaClock
                                         className="inline mr-1"
                                         size={12}
@@ -1092,17 +1171,17 @@ const CreateAgenda = () => {
                                       {item.timeStamp} min
                                     </span>
                                   </div>
-                                  <h3 className="font-bold text-lg text-gray-800 mb-1">
+                                  <h3 className="font-bold text-base sm:!text-lg text-gray-800 mb-1">
                                     {item.title || `${item.action} Agenda`}
                                   </h3>
                                   {item.description && (
-                                    <p className="text-gray-600 text-sm mb-3">
+                                    <p className="text-gray-600 text-xs sm:!text-sm mb-3">
                                       {item.description}
                                     </p>
                                   )}
 
                                   {/* Type-specific info */}
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-xs sm:!text-sm text-gray-500">
                                     {item.action === AgendaAction.Poll &&
                                       "options" in item && (
                                         <span>
@@ -1131,20 +1210,20 @@ const CreateAgenda = () => {
                                   </div>
                                 </div>
 
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                                <div className="flex gap-2 sm:!opacity-0 sm:!group-hover:opacity-100 transition-opacity sm:!ml-4 mt-2 sm:!mt-0">
                                   <button
                                     onClick={() => handleEdit(item)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    className="p-1.5 sm:!p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Edit"
                                   >
-                                    <FaEdit size={18} />
+                                    <FaEdit size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                                   </button>
                                   <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    className="p-1.5 sm:!p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Delete"
                                   >
-                                    <FaRegTrashCan size={18} />
+                                    <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
                                   </button>
                                 </div>
                               </div>
