@@ -159,7 +159,7 @@ const CallControls = ({
                 <div className="w-full px-4 pb-8 pt-6">
                   {/* Modal handle */}
                   <div className="w-12 h-1 bg-gray-500 rounded-full mx-auto mb-6"></div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
                     {/* Participants */}
                     <button
@@ -171,13 +171,18 @@ const CallControls = ({
                     >
                       <div className="relative">
                         <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
-                          <Icon name="users" className="text-[#8b5cf6] w-6 h-6" />
+                          <Icon
+                            name="users"
+                            className="text-[#8b5cf6] w-6 h-6"
+                          />
                         </div>
                         <span className="absolute -top-1 -right-1 bg-[#8b5cf6] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                           {count}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-600">Participants</span>
+                      <span className="text-xs text-gray-600">
+                        Participants
+                      </span>
                     </button>
 
                     {/* Share Link */}
@@ -257,10 +262,10 @@ const CallControls = ({
             )}
 
             {/* Main Controls UI */}
-            <div className="w-full px-2 sm:px-4 py-3">
+            <div className="w-full px-2 sm:!px-4 py-3">
               <div className="flex items-center justify-between max-w-7xl mx-auto">
                 {/* Left Section - Desktop only */}
-                <div className="hidden lg:flex items-center gap-3">
+                <div className="hidden lg:!flex items-center gap-3">
                   {/* Participants Count */}
                   <Tooltip content="View participants">
                     <button
@@ -268,7 +273,9 @@ const CallControls = ({
                       onClick={() => setShowParticipantList(true)}
                     >
                       <Icon name="users" className="text-[#8b5cf6] w-5 h-5" />
-                      <span className="font-medium text-sm text-gray-700">{count}</span>
+                      <span className="font-medium text-sm text-gray-700">
+                        {count}
+                      </span>
                     </button>
                   </Tooltip>
 
@@ -294,7 +301,7 @@ const CallControls = ({
                 </div>
 
                 {/* Center Section - Main Controls */}
-                <div className="flex items-center gap-2 mx-auto lg:mx-0">
+                <div className="flex items-center gap-2 mx-auto lg:!mx-0">
                   {/* Main control pill */}
                   <div className="flex items-center lg:!gap-x-3 bg-gray-100  gap-x-1.5 backdrop-blur-sm rounded-2xl shadow-lg px-1 py-1">
                     {/* Raise hand for LIVESTREAMS */}
@@ -307,7 +314,10 @@ const CallControls = ({
                           className="p-3 rounded-xl hover:bg-gray-200 transition-colors relative group"
                           onClick={requestToSpeak}
                         >
-                          <Icon name="hand" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                          <Icon
+                            name="hand"
+                            className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors"
+                          />
                         </button>
                       )}
 
@@ -316,7 +326,10 @@ const CallControls = ({
                       !canAccessMediaControls &&
                       hasPendingRequest && (
                         <button className="p-3 rounded-xl bg-green-100 relative">
-                          <Icon name="hand" className="text-green-600 w-5 h-5 animate-pulse" />
+                          <Icon
+                            name="hand"
+                            className="text-green-600 w-5 h-5 animate-pulse"
+                          />
                         </button>
                       )}
 
@@ -330,7 +343,10 @@ const CallControls = ({
                           onClick={raiseHand}
                           title="Raise hand to speak"
                         >
-                          <Icon name="hand" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                          <Icon
+                            name="hand"
+                            className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors"
+                          />
                         </button>
                       )}
 
@@ -343,21 +359,25 @@ const CallControls = ({
                           onClick={lowerHand}
                           title="Lower hand"
                         >
-                          <Icon name="hand" className="text-[#8b5cf6] w-5 h-5 animate-pulse" />
+                          <Icon
+                            name="hand"
+                            className="text-[#8b5cf6] w-5 h-5 animate-pulse"
+                          />
                         </button>
                       )}
 
                     {/* Agenda - Hidden on mobile */}
-                    <button 
-                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:block group"
-                      onClick={onAgendaToggle}
-                    >
-                      <TfiAgenda className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
-                    </button>
-
+                    <Tooltip content="Agenda">
+                      <button
+                        className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:!block group"
+                        onClick={onAgendaToggle}
+                      >
+                        <TfiAgenda className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                      </button>
+                    </Tooltip>
                     {/* Screen share - Hidden on mobile */}
                     {canAccessMediaControls && toggleScreenShare && (
-                      <div className="hidden lg:block">
+                      <div className="hidden lg:!block">
                         <ScreenShareControl showLabel={false} />
                       </div>
                     )}
@@ -371,38 +391,41 @@ const CallControls = ({
                     {canAccessMediaControls && toggleCamera && (
                       <CameraControl
                         showLabel={false}
-                        onError={(error) => console.error("Camera error:", error)}
+                        onError={(error) =>
+                          console.error("Camera error:", error)
+                        }
                       />
                     )}
 
                     {/* Reactions */}
                     <button
                       className={`p-3 rounded-xl transition-all duration-200 ${
-                        showReactions
-                          ? "bg-[#8b5cf6]/10"
-                          : "hover:bg-gray-200"
+                        showReactions ? "bg-[#8b5cf6]/10" : "hover:bg-gray-200"
                       }`}
                       onClick={handleReactionsToggle}
                     >
-                      <Icon 
-                        name="smiley" 
+                      <Icon
+                        name="smiley"
                         className={`w-5 h-5 ${
                           showReactions ? "text-yellow-500" : "text-yellow-500"
-                        }`} 
+                        }`}
                       />
                     </button>
 
                     {/* Chat - Hidden on mobile */}
                     <button
-                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:block group"
+                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:!block group"
                       onClick={handleOpenChat}
                     >
-                      <Icon name="chat" className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                      <Icon
+                        name="chat"
+                        className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors"
+                      />
                     </button>
 
                     {/* Mobile menu button */}
                     <button
-                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors lg:hidden"
+                      className="p-3 rounded-xl hover:bg-gray-200 transition-colors lg:!hidden"
                       onClick={() => setShowMobileMenu(true)}
                     >
                       <Icon name="more" className="text-gray-600 w-5 h-5" />
@@ -415,14 +438,19 @@ const CallControls = ({
                       className="flex items-center gap-2 px-4 py-3 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-2xl shadow-lg transition-all duration-200 group"
                       onClick={handleDisconnectClick}
                     >
-                      <Icon name="phone" className="w-5 h-5 rotate-135 group-hover:rotate-180 transition-transform" />
-                      <span className="hidden sm:block text-sm font-medium">End</span>
+                      <Icon
+                        name="phone"
+                        className="w-5 h-5 rotate-135 group-hover:rotate-180 transition-transform"
+                      />
+                      <span className="hidden sm:!block text-sm font-medium">
+                        End
+                      </span>
                     </button>
                   )}
                 </div>
 
                 {/* Right Section - Desktop only */}
-                <div className="hidden lg:flex items-center gap-3">
+                <div className="hidden lg:!flex items-center gap-3">
                   {/* YouTube Streaming */}
                   {userType === "host" && (
                     <Tooltip content="Stream to YouTube">
