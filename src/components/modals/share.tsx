@@ -1,8 +1,8 @@
 import { RiLink } from "react-icons/ri";
 import { IoIosClose } from "react-icons/io";
 import { FiCopy } from "react-icons/fi";
-import toast from "react-hot-toast";
 import { Modal } from "../ui";
+import { copyText } from "../../utils";
 
 type Stream = {
   name: string;
@@ -14,23 +14,14 @@ type ShareModalProps = {
 };
 const ShareModal = ({
   stream: { name, streamSessionType },
-  closeFunc
+  closeFunc,
 }: ShareModalProps) => {
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Link copied");
-    } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong");
-    }
-  };
   return (
     <Modal bgColor="bg-modal-black">
       <div className="bg-white relative rounded-lg w-[80%] lg:!w-[350px]">
         <div
           className="bg-white p-1.5 absolute -top-2.5 -right-1.5 rounded cursor-pointer"
-            onClick={closeFunc}
+          onClick={closeFunc}
         >
           <IoIosClose className="text-black text-lg" />
         </div>
@@ -57,7 +48,9 @@ const ShareModal = ({
               </p>
             </div>
             <div
-              onClick={() => copyText(`${window.location.hostname}/${name}`)}
+              onClick={() =>
+                copyText(`${window.location.hostname}/${name}`, "Link copied")
+              }
               className="cursor-pointer p-1.5 rounded-lg bg-primary flex-shrink-0 ml-1"
             >
               <FiCopy className="text-white" />

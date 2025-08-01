@@ -4,8 +4,10 @@ import {
   useParticipantData,
   type SDKParticipant,
   type Participant,
+  useRequirePublicKey,
 } from "@vidbloq/react";
 import { SendModal } from "../modals";
+import { copyText } from "../../utils";
 
 type ParticipantTileContentProps = {
   participant: SDKParticipant;
@@ -36,6 +38,8 @@ const ParticipantTileContent = ({
   const participantData = useParticipantData({
     participant,
   });
+
+  const { publicKey } = useRequirePublicKey();
 
   const handleGiftClick = () => {
     const recipient = controls.prepareGiftRecipient();
@@ -93,7 +97,12 @@ const ParticipantTileContent = ({
       )}
 
       {/* User info - compact width based on content */}
-      <div className="absolute bottom-1 left-1 z-10">
+      <div
+        className="absolute bottom-1 left-1 z-10 cursor-pointer"
+        onClick={() =>
+          copyText(publicKey?.toString() ?? "", "Wallet address copied")
+        }
+      >
         <div className="bg-black bg-opacity-50 rounded px-2 py-1 inline-flex items-center space-x-2 max-w-max">
           <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden flex-shrink-0">
             {participantData.avatarUrl ? (
