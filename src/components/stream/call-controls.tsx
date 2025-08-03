@@ -24,6 +24,7 @@ import { ShareModal } from "@vidbloq/react";
 import Reactions from "./reactions";
 import ChatNotificationManager from "./chat-notification-manager";
 import Tooltip from "../ui/tooltip";
+import { useStream } from "../../hooks";
 
 type CallControlsProps = {
   onRaiseHand?: () => void;
@@ -67,6 +68,8 @@ const CallControls = ({
   const [showReactions, setShowReactions] = useState<boolean>(false);
   const [showYouTubeModal, setShowYouTubeModal] = useState<boolean>(false);
   const [showFeatureModal, setShowFeatureModal] = useState<boolean>(false);
+
+  const { agendas } = useStream();
 
   const handleReactionsToggle = useCallback(() => {
     setShowReactions(!showReactions);
@@ -367,14 +370,18 @@ const CallControls = ({
                       )}
 
                     {/* Agenda - Hidden on mobile */}
-                    <Tooltip content="Agenda">
-                      <button
-                        className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:!block group"
-                        onClick={onAgendaToggle}
-                      >
-                        <TfiAgenda className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
-                      </button>
-                    </Tooltip>
+                    {(userType === "host" ||
+                      (agendas && agendas.length > 0)) && (
+                      <Tooltip content="Agenda">
+                        <button
+                          className="p-3 rounded-xl hover:bg-gray-200 transition-colors hidden lg:!block group"
+                          onClick={onAgendaToggle}
+                        >
+                          <TfiAgenda className="text-gray-600 w-5 h-5 group-hover:text-[#8b5cf6] transition-colors" />
+                        </button>
+                      </Tooltip>
+                    )}
+
                     {/* Screen share - Hidden on mobile */}
                     {canAccessMediaControls && toggleScreenShare && (
                       <div className="hidden lg:!block">

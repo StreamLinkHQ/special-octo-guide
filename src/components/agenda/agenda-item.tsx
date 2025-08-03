@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
-import { useStreamAddons, useRequirePublicKey, useStreamContext, type AddonType, type Agenda } from "@vidbloq/react";
+import { useStreamAddons, useRequirePublicKey, useStreamContext, type AddonType, type Agenda, useDeleteAgenda } from "@vidbloq/react";
 import { CiMenuKebab, CiEdit } from "react-icons/ci";
 import { VscDebugStart, VscDebugStop } from "react-icons/vsc";
 import { MdDelete } from "react-icons/md";
 import { FaEye, FaClock, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
 import { useStream } from "../../hooks";
-import { useDeleteAgenda } from "@vidbloq/react";
 
 type AgendaItemProps = {
   item: Agenda;

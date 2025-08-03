@@ -5,6 +5,7 @@ import {
   useDownloadParticipants,
   type Participant, 
 } from "@vidbloq/react";
+import { useWallet } from "@civic/auth-web3/react";
 import Modal from "../ui/v-modal";
 import { Icon } from "../icons";
 import ParticipantSmall from "../stream/participant";
@@ -22,6 +23,7 @@ const ParticipantListModal = ({
   const { userType } = useStreamContext();
   const { participants, count } = useParticipantList();
   const { downloadParticipants } = useDownloadParticipants();
+  const wallet = useWallet({ type: "solana" });
 
   // Add state for search
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -153,33 +155,41 @@ const ParticipantListModal = ({
           {viewMode === "list" && (
             <div className="flex flex-col gap-y-2 max-h-[500px] lg:max-h-[520px] overflow-y-auto">
               {filteredParticipants.length > 0 ? (
-                filteredParticipants.map((participant, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-row items-center justify-between p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <div className="flex flex-row items-center">
-                      <img
-                        src={participant?.avatarUrl}
-                        className="h-[42px] w-[42px] mr-3 rounded"
-                        alt={`${participant.userName}'s avatar`}
-                      />
-                      <p className="text-text-secondary">
-                        @{participant.userName}
-                      </p>
-                    </div>
+                filteredParticipants.map((participant, i) => {
+                  // Check if this participant is the current user
+                  const isCurrentUser = wallet?.address === participant.walletAddress;
+                  
+                  return (
                     <div
-                      className="p-2 rounded-full bg-primary cursor-pointer"
-                      onClick={() => handleSendClick(participant)}
+                      key={i}
+                      className="flex flex-row items-center justify-between p-2 hover:bg-gray-100 rounded-lg"
                     >
-                      <Icon
-                        name="moneyTransfer"
-                        size={16}
-                        className="text-white"
-                      />
+                      <div className="flex flex-row items-center">
+                        <img
+                          src={participant?.avatarUrl}
+                          className="h-[42px] w-[42px] mr-3 rounded"
+                          alt={`${participant.userName}'s avatar`}
+                        />
+                        <p className="text-text-secondary">
+                          @{participant.userName}
+                        </p>
+                      </div>
+                      {/* Only show money transfer icon if NOT current user */}
+                      {!isCurrentUser && (
+                        <div
+                          className="p-2 rounded-full bg-primary cursor-pointer"
+                          onClick={() => handleSendClick(participant)}
+                        >
+                          <Icon
+                            name="moneyTransfer"
+                            size={16}
+                            className="text-white"
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-6 text-text-secondary">
                   No matching participants found
