@@ -179,7 +179,7 @@ const ChatModal = ({ participants, isOpen, onClose }: ChatModalProps) => {
       <div className="flex flex-col h-[calc(100vh-150px)] overflow-hidden">
         <div
           ref={messageContainerRef}
-          className="flex-1 overflow-y-auto p-4 h-[75%]"
+          className="flex-1 overflow-y-auto p-4 h-[80%]"
         >
           {formattedMessages.map((chat, index) => {
             const { userName, avatarUrl } = getParticipantInfo(chat);
@@ -218,7 +218,7 @@ const ChatModal = ({ participants, isOpen, onClose }: ChatModalProps) => {
         </div>
 
         {/* Fixed input area */}
-        <div className="flex-shrink-0 p-4 bg-[var(--sdk-bg-primary-color)] border-t border-gray-200 h-[25%]">
+        <div className="flex-shrink-0 p-4 bg-[var(--sdk-bg-primary-color)] border-t border-gray-200 h-[20%]">
           <div className="flex items-center border border-primary rounded-xl overflow-hidden">
             <input
               type="text"
