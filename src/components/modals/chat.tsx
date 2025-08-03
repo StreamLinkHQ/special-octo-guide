@@ -178,7 +178,7 @@ const ChatModal = ({ participants, isOpen, onClose }: ChatModalProps) => {
     >
       <div className="flex flex-col h-full">
         {/* Mobile header with close button - only visible on mobile */}
-        <div className="flex sm:hidden items-center justify-between p-4 border-b border-gray-200">
+        {/* <div className="flex sm:hidden items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold">Chat</h3>
           <button
             onClick={onClose}
@@ -186,7 +186,7 @@ const ChatModal = ({ participants, isOpen, onClose }: ChatModalProps) => {
           >
             <Icon name="close" size={20} className="text-gray-600" />
           </button>
-        </div>
+        </div> */}
 
         {/* Messages container */}
         <div
