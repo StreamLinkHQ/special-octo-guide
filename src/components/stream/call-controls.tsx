@@ -203,18 +203,21 @@ const CallControls = ({
                     </button>
 
                     {/* Agenda */}
-                    <button
-                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
-                      onClick={() => {
-                        setShowMobileMenu(false);
-                        onAgendaToggle();
-                      }}
-                    >
-                      <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
-                        <TfiAgenda className="text-[#8b5cf6] text-xl" />
-                      </div>
-                      <span className="text-xs text-gray-600">Agenda</span>
-                    </button>
+                    {(userType === "host" ||
+                      (agendas && agendas.length > 0)) && (
+                      <button
+                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white border border-primary-light hover:bg-primary-light/10 transition-colors"
+                        onClick={() => {
+                          setShowMobileMenu(false);
+                          onAgendaToggle();
+                        }}
+                      >
+                        <div className="w-12 h-12 bg-[#5b21b6]/20 rounded-full flex items-center justify-center">
+                          <TfiAgenda className="text-[#8b5cf6] text-xl" />
+                        </div>
+                        <span className="text-xs text-gray-600">Agenda</span>
+                      </button>
+                    )}
 
                     {/* Chat */}
                     <button

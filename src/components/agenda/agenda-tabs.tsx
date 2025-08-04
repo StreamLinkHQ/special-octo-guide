@@ -56,6 +56,17 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     syncAddonState();
   }, [syncAddonState]);
 
+  // Add a handler for when agendas are created
+  const handleAgendaCreated = () => {
+    // Refresh the agendas list
+    refetchAgendas();
+  };
+
+  // Add a handler to switch to existing tab
+  const handleSwitchToExisting = () => {
+    setActiveTab("existing");
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleViewResponses = (agenda: any) => {
     setViewingResponsesForAgenda(agenda);
@@ -206,7 +217,12 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "create":
-        return <CreateAgenda />;
+        return (
+          <CreateAgenda 
+            onAgendaCreated={handleAgendaCreated}
+            onSwitchToExisting={handleSwitchToExisting}
+          />
+        );
 
       case "existing":
         return (
