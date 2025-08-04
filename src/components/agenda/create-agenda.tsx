@@ -28,7 +28,12 @@ import {
   type QuizQuestionForm,
 } from "../../types/agenda";
 
-const CreateAgenda = () => {
+interface CreateAgendaProps {
+  onAgendaCreated?: () => void;
+  onSwitchToExisting?: () => void;
+}
+
+const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps = {}) => {
   const [selectedType, setSelectedType] = useState<AgendaAction | null>(null);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -101,6 +106,7 @@ const CreateAgenda = () => {
 
   useEffect(() => {
     getStreamAgenda(roomName);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomName]);
 
   const handleAddPollOption = () => {
@@ -460,7 +466,7 @@ const CreateAgenda = () => {
     setShowMobileTypeSelector(false);
   };
 
-  const handleSubmitAll = () => {
+  const handleSubmitAll = async () => {
     console.log("Agendas submitted:", agendaItems);
     if (!publicKey) {
       toast.error("Please connect your wallet to create an agenda.");
@@ -472,11 +478,37 @@ const CreateAgenda = () => {
       duration: item.duration,
     }));
 
-    createAgenda({
-      streamId: roomName,
-      wallet: publicKey?.toString(),
-      agendas: agendasForAPI,
-    });
+    try {
+      const result = await createAgenda({
+        streamId: roomName,
+        wallet: publicKey?.toString(),
+        agendas: agendasForAPI,
+      });
+
+      if (result) {
+        // Success - show toast and switch to existing tab
+        toast.success(`Successfully created ${agendaItems.length} agenda${agendaItems.length !== 1 ? 's' : ''}!`);
+        
+        // Clear the form
+        setAgendaItems([]);
+        
+        // Trigger refresh of agendas list
+        if (onAgendaCreated) {
+          onAgendaCreated();
+        }
+        
+        // Switch to existing tab to show the new agendas
+        if (onSwitchToExisting) {
+          onSwitchToExisting();
+        }
+      } else {
+        // Handle case where result is null but no error was thrown
+        toast.error("Failed to create agenda. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating agenda:", error);
+      toast.error("Failed to create agenda. Please try again.");
+    }
   };
 
   const handleSelectType = (type: AgendaAction) => {
@@ -1119,10 +1151,11 @@ const CreateAgenda = () => {
                   </div>
                   <button
                     onClick={handleSubmitAll}
-                    className="w-full sm:!w-auto px-6 sm:!px-8 py-2.5 sm:!py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:!rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 sm:!gap-3 shadow-lg text-sm sm:!text-base"
+                    disabled={isLoading}
+                    className="w-full sm:!w-auto px-6 sm:!px-8 py-2.5 sm:!py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:!rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 sm:!gap-3 shadow-lg text-sm sm:!text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     <FaCheck size={16} className="sm:!w-[18px] sm:!h-[18px]" />
-                    Publish All Agendas
+                    {isLoading ? "Publishing..." : "Publish All Agendas"}
                   </button>
                 </div>
 
