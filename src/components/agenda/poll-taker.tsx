@@ -478,11 +478,11 @@ const PollTaker = () => {
           )}
 
           {/* Footer Info */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
+          {/* <div className="mt-6 pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
               Your vote will be recorded on the blockchain and is publicly visible.
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
