@@ -26,7 +26,7 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  console.log({ balance });
+  // console.log({ balance });
 
   const getUsdcBalance = async () => {
     if (!publicKey) {
