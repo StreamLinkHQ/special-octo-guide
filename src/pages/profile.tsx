@@ -4,7 +4,7 @@ import { useWallet } from "@civic/auth-web3/react";
 import { CiUser, CiSettings, CiEdit, CiCamera } from "react-icons/ci";
 import { IoSunnyOutline, IoCopyOutline } from "react-icons/io5";
 import { FaCheck, FaSave } from "react-icons/fa";
-import { FiMoon } from "react-icons/fi";
+import { FiMoon, FiSend } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { 
   getDisplayCredentials, 
@@ -15,6 +15,8 @@ import {
   getAvatarOptions
 } from "../utils";
 import type { UserPreferences } from "../types";
+import { useRequirePublicKey, getTokenBalance } from "@vidbloq/react";
+import {SendModal} from "../components"; 
 
 const UserProfilePage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(0);
@@ -26,8 +28,12 @@ const UserProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [balance, setBalance] = useState(0);
+  
   const userContext = useUser();
   const wallet = useWallet({ type: "solana" });
+  const { publicKey } = useRequirePublicKey();
 
   const statusOptions = [
     { value: "available", label: "Available", color: "bg-green-500" },
@@ -35,6 +41,21 @@ const UserProfilePage = () => {
     { value: "away", label: "Away", color: "bg-yellow-500" },
     { value: "invisible", label: "Invisible", color: "bg-gray-500" },
   ];
+
+  // Get USDC balance
+  const getUsdcBalance = async () => {
+    if (!publicKey) return;
+    try {
+      const balanceData = await getTokenBalance(publicKey.toString());
+      setBalance(balanceData.onChainBalance.usdc);
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+    }
+  };
+
+  useEffect(() => {
+    getUsdcBalance();
+  }, [publicKey]);
 
   // Store Google credentials when user data becomes available
   useEffect(() => {
@@ -59,10 +80,8 @@ const UserProfilePage = () => {
         setTheme(savedPreferences.theme || "light");
         setStatus(savedPreferences.status || "available");
       } else {
-        // If no saved preferences, check if we have Google credentials to use as defaults
         const displayCreds = getDisplayCredentials();
         if (displayCreds.hasCustomPreferences === false && displayCreds.name !== 'User') {
-          // User has Google credentials but no saved preferences - set smart defaults
           setUseGoogleName(true);
           setUseGoogleAvatar(true);
           console.log("No saved preferences found, using Google credentials as defaults");
@@ -131,10 +150,9 @@ const UserProfilePage = () => {
   };
 
   const getCurrentAvatar = () => {
-    const avatarOptions = getAvatarOptions(); // Get from centralized location
+    const avatarOptions = getAvatarOptions();
     
     if (useGoogleAvatar) {
-      // First try current user context, then fallback to stored Google credentials
       if (userContext.user?.picture) {
         return userContext.user.picture;
       }
@@ -148,7 +166,6 @@ const UserProfilePage = () => {
 
   const getCurrentUsername = () => {
     if (useGoogleName) {
-      // First try current user context, then fallback to stored Google credentials
       if (userContext.user?.name) {
         return userContext.user.name;
       }
@@ -169,6 +186,25 @@ const UserProfilePage = () => {
     }
     const googleCreds = getGoogleCredentials();
     return googleCreds?.name || "No Google name available";
+  };
+
+  // Create a mock selectedUser object for SendModal when transferring from profile
+  const handleTransferClick = () => {
+    setShowTransferModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowTransferModal(false);
+    getUsdcBalance(); // Refresh balance after modal closes
+  };
+
+  // Mock participant for general transfer (no specific recipient)
+  const mockTransferParticipant = {
+    id: "transfer-" + Date.now(), // Generate unique ID
+    userName: "Enter Recipient",
+    walletAddress: "", // Will be filled by user in modal
+    userType: "guest" as const, // Assuming UserType has "guest" option
+    avatarUrl: "",
   };
 
   if (isLoading) {
@@ -306,8 +342,17 @@ const UserProfilePage = () => {
                     <span className="text-sm font-medium text-gray-700 block mb-1">
                       Wallet Balance
                     </span>
-                    <div className="text-lg font-bold text-purple-600">
-                      2.47 sol
+                    <div className="flex flex-col items-center justify-between">
+                      <div className="text-lg font-bold text-purple-600">
+                        {balance.toFixed(6)} USDC
+                      </div>
+                      <button
+                        onClick={handleTransferClick}
+                        className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <FiSend size={14} />
+                        <span>Transfer</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -527,6 +572,13 @@ const UserProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {showTransferModal && (
+        <SendModal
+          selectedUser={mockTransferParticipant}
+          closeFunc={handleModalClose}
+        />
+      )}
     </div>
   );
 };

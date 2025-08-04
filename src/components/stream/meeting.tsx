@@ -257,7 +257,7 @@ export default function MeetingView({ setShowParticipantList }: MeetingViewProps
       <div key={uniqueKey} className="h-full w-full">
         <div
           className={`relative rounded-lg overflow-hidden bg-red-900 h-full w-full ${
-            isActive ? "ring-4 ring-primary animate-pulse" : ""
+            isActive ? "ring-4 ring-primary" : ""
           }`}
         >
           {isScreenShare ? (

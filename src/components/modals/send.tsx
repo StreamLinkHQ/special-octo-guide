@@ -8,6 +8,7 @@ type SendModalProps = {
 
 const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
   const [amount, setAmount] = useState<string>('');
+  const [recipientAddress, setRecipientAddress] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [isTransactionFetched, setIsTransactionFetched] = useState<boolean>(false);
   const [balance, setBalance] = useState<number>(0);
@@ -16,17 +17,19 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
 
   const NETWORK_FEE = 0.01;
 
+  // Check if this is a general transfer (no specific recipient)
+  const isGeneralTransfer = !selectedUser || !selectedUser.walletAddress;
+
   // Format wallet address
   const formatAddress = (address: string) => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-
   console.log({ balance });
 
   const getUsdcBalance = async () => {
-    if (!selectedUser || !publicKey) {
+    if (!publicKey) {
       return;
     }
     const balance = await getTokenBalance(publicKey.toString());
@@ -35,13 +38,20 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
 
   useEffect(() => {
     getUsdcBalance();
+    // Set initial recipient address if provided
+    if (selectedUser?.walletAddress) {
+      setRecipientAddress(selectedUser.walletAddress);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
-  const recipients = selectedUser
+  // Use recipientAddress state for general transfers, selectedUser.walletAddress for specific user transfers
+  const finalRecipientAddress = isGeneralTransfer ? recipientAddress : selectedUser?.walletAddress || '';
+
+  const recipients = finalRecipientAddress && amount
     ? [
         {
-          publicKey: selectedUser.walletAddress,
+          publicKey: finalRecipientAddress,
           amount: Number(amount),
         },
       ]
@@ -147,6 +157,15 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
       return;
     }
 
+    if (!finalRecipientAddress) {
+      addNotification({
+        type: "error",
+        message: "Please enter a recipient address",
+        duration: 3000,
+      });
+      return;
+    }
+
     if (parseFloat(amount) > balance) {
       addNotification({
         type: "error",
@@ -178,7 +197,7 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
   const getButtonState = () => {
     if (transactionSignature) return { text: 'Sent! ✓', disabled: true, className: 'bg-green-500' };
     if (loading || transactionLoading) return { text: 'Sending...', disabled: true, className: 'bg-gradient-to-r from-purple-600 to-purple-700 opacity-75' };
-    if (!amount || parseFloat(amount) <= 0) return { text: 'Send', disabled: true, className: 'bg-gradient-to-r from-purple-600 to-purple-700 opacity-50' };
+    if (!amount || parseFloat(amount) <= 0 || !finalRecipientAddress) return { text: 'Send', disabled: true, className: 'bg-gradient-to-r from-purple-600 to-purple-700 opacity-50' };
     if (error || transactionError) return { text: error || transactionError || 'Error', disabled: true, className: 'bg-red-500 opacity-90' };
     return { text: `Send ${parseFloat(amount).toFixed(6)} USDC`, disabled: false, className: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' };
   };
@@ -201,6 +220,9 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
       <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-gray-800">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 relative">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isGeneralTransfer ? 'Transfer Funds' : 'Send to User'}
+          </h2>
           <button
             onClick={() => closeFunc(true)}
             className="w-9 h-9 right-0 absolute rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-gray-800 hover:text-black transition-all duration-200 hover:rotate-90"
@@ -212,28 +234,41 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
         </div>
 
         {/* Recipient */}
-        <div className="mb-6">
-          <p className="text-sm text-black mb-3 font-medium">SENDING TO</p>
-          <div className="bg-black/5 border border-black/10 rounded-2xl p-4 flex items-center gap-4 hover:bg-black/[0.07] hover:border-purple-500/30 transition-all duration-200">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
-              {selectedUser?.avatarUrl ? (
-                <img 
-                  src={selectedUser.avatarUrl} 
-                  alt={selectedUser.userName}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-white font-semibold text-lg">
-                  {selectedUser.userName.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-black font-medium">{selectedUser.userName}</p>
-              <p className="text-gray-400 text-sm font-mono">{formatAddress(selectedUser.walletAddress)}</p>
+        {isGeneralTransfer ? (
+          <div className="mb-6">
+            <p className="text-sm text-black mb-3 font-medium">RECIPIENT ADDRESS</p>
+            <input
+              type="text"
+              value={recipientAddress}
+              onChange={(e) => setRecipientAddress(e.target.value)}
+              placeholder="Enter Solana wallet address"
+              className="w-full bg-black/5 border-2 border-black/10 rounded-xl px-4 py-3 text-black placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:bg-black/[0.07] transition-all duration-200"
+            />
+          </div>
+        ) : (
+          <div className="mb-6">
+            <p className="text-sm text-black mb-3 font-medium">SENDING TO</p>
+            <div className="bg-black/5 border border-black/10 rounded-2xl p-4 flex items-center gap-4 hover:bg-black/[0.07] hover:border-purple-500/30 transition-all duration-200">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+                {selectedUser?.avatarUrl ? (
+                  <img 
+                    src={selectedUser.avatarUrl} 
+                    alt={selectedUser.userName}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-lg">
+                    {selectedUser.userName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-black font-medium">{selectedUser.userName}</p>
+                <p className="text-gray-400 text-sm font-mono">{formatAddress(selectedUser.walletAddress)}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Amount Input */}
         <div className="mb-6">
@@ -272,7 +307,6 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
           </div>
 
         </div>
-
 
         {/* Send Button */}
         <button

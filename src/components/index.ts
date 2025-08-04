@@ -4,3 +4,4 @@ export { default as ShareModal } from "./modals/share";
 export { default as ProtectedRoute } from "./protected-route"
 export * from "./layout"
 export * from "./ui"
+export * from "./modals"
