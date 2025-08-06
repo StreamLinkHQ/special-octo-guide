@@ -5,6 +5,7 @@ import { VscTarget } from "react-icons/vsc";
 import { MdOutlineFileDownload } from "react-icons/md";
 import { FiFileText } from "react-icons/fi";
 import { useGetQuizResults } from "@vidbloq/react";
+import { useStream } from "../../hooks"; // Using the proper hook
 
 // Types based on your hook interfaces
 interface QuestionStat {
@@ -26,37 +27,74 @@ interface LeaderboardEntry {
   accuracy: number;
 }
 
-
 interface QuizLeaderboardProps {
   agendaId?: string;
 }
 
-
 const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
-  const [activeTab, setActiveTab] = useState<"leaderboard" | "stats">(
-    "leaderboard"
-  );
-
-  // In a real implementation, you would use your hook like this:
-  const { getQuizResults, isLoading, results } = useGetQuizResults();
+  const [activeTab, setActiveTab] = useState<"leaderboard" | "stats">("leaderboard");
+  
+  // Use the hook for API calls
+  const { getQuizResults, isLoading: isLoadingFromHook, results: hookResults } = useGetQuizResults();
+  
+  // Use the stream context properly with useStream hook
+  const { 
+    getResponseData, 
+    isResponseDataLoading, 
+    preloadResponseData, 
+    clearResponseCache 
+  } = useStream();
+  
+  // Check for cached data
+  const cachedData = agendaId ? getResponseData(agendaId, 'quiz') : null;
+  const isCacheLoading = agendaId ? isResponseDataLoading(agendaId) : false;
+  
+  // Use cached data if available, otherwise use hook results
+  const results = cachedData || hookResults;
+  const isLoading = isCacheLoading || (isLoadingFromHook && !cachedData);
+  
+  // Track if we've fetched for this agenda
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchQuizResults = async () => {
     if (!agendaId) {
-      console.log("No activeAgendaId, skipping fetch");
+      console.log("No agendaId provided, skipping fetch");
       return;
     }
+    
     try {
+      console.log('Fetching fresh quiz results for agenda:', agendaId);
       await getQuizResults(agendaId);
+      
+      // After fetching, update the cache if no cached data exists
+      if (!cachedData) {
+        preloadResponseData(agendaId, 'quiz');
+      }
     } catch (error) {
       console.error("Error fetching quiz data:", error);
     }
   };
 
   useEffect(() => {
-    if (agendaId) {
+    if (agendaId && !cachedData && !hasFetched && !isCacheLoading) {
+      // No cached data and haven't fetched yet, fetch now
       fetchQuizResults();
+      setHasFetched(true);
+    } else if (cachedData) {
+      // We have cached data, no need to fetch
+      console.log('Using cached quiz results for agenda:', agendaId);
+      setHasFetched(true);
     }
-  }, [agendaId]);
+  }, [agendaId, cachedData, hasFetched, isCacheLoading]);
+
+  const handleRefresh = async () => {
+    if (!agendaId) return;
+    
+    // Clear cache for this agenda and refetch
+    clearResponseCache(agendaId);
+    setHasFetched(false);
+    await fetchQuizResults();
+  };
 
   const getRankIcon = (position: number): JSX.Element => {
     switch (position) {
@@ -78,13 +116,13 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
   const getRankStyle = (position: number): string => {
     switch (position) {
       case 1:
-        return "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200";
+        return "bg-gradient-to-r from-yellow-50 to-transparent";
       case 2:
-        return "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200";
+        return "bg-gradient-to-r from-gray-50 to-transparent";
       case 3:
-        return "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200";
+        return "bg-gradient-to-r from-amber-50 to-transparent";
       default:
-        return "bg-white border-gray-200 hover:bg-gray-50";
+        return "bg-white hover:bg-purple-50";
     }
   };
 
@@ -118,7 +156,7 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
           participant.correctAnswers,
           participant.totalAnswers,
           participant.accuracy,
-          new Date().toISOString().split("T")[0], // Current date as completion date
+          new Date().toISOString().split("T")[0],
         ].join(",")
     );
 
@@ -143,7 +181,6 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
   const downloadDetailedReport = (): void => {
     if (!results) return;
 
-    // Create a more comprehensive report
     const reportContent = `
 QUIZ RESULTS REPORT
 ===================
@@ -154,6 +191,7 @@ Participants Who Answered: ${results.participantsAnswered}
 Completion Rate: ${Math.round(
       (results.participantsAnswered / results.totalParticipants) * 100
     )}%
+${cachedData ? 'Data Source: Cached' : 'Data Source: Live'}
 
 TOP 10 LEADERBOARD
 ==================
@@ -220,15 +258,22 @@ ${results.leaderboard
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="h-24 bg-gray-200 rounded mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-purple-200 rounded-lg mb-4"></div>
+            <div className="h-24 bg-purple-100 rounded-xl mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-purple-50 rounded-xl"></div>
+              ))}
+            </div>
           </div>
+          {cachedData && (
+            <div className="mt-4 text-center text-sm text-purple-600">
+              Loading fresh data...
+            </div>
+          )}
         </div>
       </div>
     );
@@ -236,328 +281,411 @@ ${results.leaderboard
 
   if (!results) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center py-12">
-          <IoTrophyOutline className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">
-            No Quiz Results Found
-          </h2>
-          <p className="text-gray-500">
-            Unable to load quiz results at this time.
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12 bg-white rounded-3xl shadow-xl border border-purple-100">
+            <IoTrophyOutline className="w-16 h-16 text-purple-300 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-600 mb-2">
+              No Quiz Results Found
+            </h2>
+            <p className="text-gray-500 mb-4">
+              Unable to load quiz results at this time.
+            </p>
+            {agendaId && (
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Try Again
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {results.title || "Quiz Results"}
-            </h1>
-            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <FaUser className="w-4 h-4" />
-                <span>
-                  {results.participantsAnswered} of {results.totalParticipants}{" "}
-                  participated
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <VscTarget className="w-4 h-4" />
-                <span>{results.questionStats.length} questions</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Download Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={downloadLeaderboard}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <MdOutlineFileDownload className="w-4 h-4" />
-              Download CSV
-            </button>
-            <button
-              onClick={downloadDetailedReport}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FiFileText className="w-4 h-4" />
-              Full Report
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-1/2 -left-1/4 w-full h-full bg-purple-300 rounded-full opacity-20 blur-3xl"></div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("leaderboard")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "leaderboard"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Leaderboard
-            </button>
-            <button
-              onClick={() => setActiveTab("stats")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "stats"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Question Statistics
-            </button>
-          </nav>
+      <div className="relative max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent mb-2 sm:mb-3">
+                {results.title || "Quiz Results"}
+              </h1>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <FaUser className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                  <span>
+                    <span className="font-semibold text-purple-700">{results.participantsAnswered}</span> of{" "}
+                    <span className="font-semibold text-purple-700">{results.totalParticipants}</span> participated
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <VscTarget className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                  <span>
+                    <span className="font-semibold text-purple-700">{results.questionStats.length}</span> questions
+                  </span>
+                </div>
+                {cachedData && (
+                  <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    <span>✓ Cached</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Download Actions */}
+            <div className="flex flex-row gap-2 sm:gap-3 mt-4 lg:mt-0">
+              <button
+                onClick={downloadLeaderboard}
+                className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
+              >
+                <MdOutlineFileDownload className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Download</span> CSV
+              </button>
+              <button
+                onClick={downloadDetailedReport}
+                className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
+              >
+                <FiFileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Full</span> Report
+              </button>
+              {agendaId && (
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-lg sm:rounded-xl hover:bg-purple-50 hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
+                >
+                  <IoTrendingUpOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Refresh
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {activeTab === "leaderboard" && (
-        <div className="space-y-4">
-          {/* Top 3 Podium */}
-          {results.leaderboard.length >= 3 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-                Top Performers
-              </h2>
-              <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-                {/* Second Place */}
-                <div className="text-center order-1">
-                  <div className="bg-gradient-to-b from-gray-100 to-gray-200 rounded-lg p-4 mb-3">
-                    <FaMedal className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-gray-700">#2</div>
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {results.leaderboard[1].userName}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {results.leaderboard[1].pointsEarned} pts
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {results.leaderboard[1].accuracy}% accuracy
-                  </div>
-                </div>
+        {/* Navigation Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-purple-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("leaderboard")}
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "leaderboard"
+                    ? "border-purple-500 text-purple-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Leaderboard
+              </button>
+              <button
+                onClick={() => setActiveTab("stats")}
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "stats"
+                    ? "border-purple-500 text-purple-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Question Statistics
+              </button>
+            </nav>
+          </div>
+        </div>
 
-                {/* First Place */}
-                <div className="text-center order-2">
-                  <div className="bg-gradient-to-b from-yellow-100 to-yellow-200 rounded-lg p-4 mb-3 transform scale-110">
-                    <IoTrophyOutline className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-yellow-700">#1</div>
+        {activeTab === "leaderboard" && (
+          <div className="space-y-8">
+            {/* Top 3 Podium */}
+            {results.leaderboard.length >= 3 && (
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-purple-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-center bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent mb-4 sm:mb-6 lg:mb-8">
+                  Top Performers
+                </h2>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4 max-w-3xl mx-auto">
+                  {/* Second Place */}
+                  <div className="text-center order-1 transform hover:scale-105 transition-transform duration-200">
+                    <div className="bg-gradient-to-b from-gray-100 to-gray-200 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 mb-2 sm:mb-3 shadow-lg">
+                      <FaMedal className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-gray-400 mx-auto mb-1 sm:mb-2" />
+                      <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-700">#2</div>
+                    </div>
+                    <div className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate px-1">
+                      {results.leaderboard[1].userName}
+                    </div>
+                    <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-600">
+                      {results.leaderboard[1].pointsEarned} pts
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      {results.leaderboard[1].accuracy}%
+                    </div>
                   </div>
-                  <div className="font-semibold text-gray-900">
-                    {results.leaderboard[0].userName}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {results.leaderboard[0].pointsEarned} pts
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {results.leaderboard[0].accuracy}% accuracy
-                  </div>
-                </div>
 
-                {/* Third Place */}
-                <div className="text-center order-3">
-                  <div className="bg-gradient-to-b from-amber-100 to-amber-200 rounded-lg p-4 mb-3">
-                    <FaAward className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-amber-700">#3</div>
+                  {/* First Place */}
+                  <div className="text-center order-2 transform sm:scale-110 hover:scale-105 sm:hover:scale-115 transition-transform duration-200">
+                    <div className="bg-gradient-to-b from-yellow-100 to-yellow-200 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 mb-2 sm:mb-3 shadow-xl relative">
+                      <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-yellow-400 rounded-full animate-pulse"></div>
+                      <IoTrophyOutline className="w-7 h-7 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-500 mx-auto mb-1 sm:mb-2" />
+                      <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-yellow-700">#1</div>
+                    </div>
+                    <div className="font-bold text-gray-900 text-xs sm:text-base lg:text-lg truncate px-1">
+                      {results.leaderboard[0].userName}
+                    </div>
+                    <div className="text-sm sm:text-lg lg:text-xl font-bold text-purple-600">
+                      {results.leaderboard[0].pointsEarned} pts
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      {results.leaderboard[0].accuracy}%
+                    </div>
                   </div>
-                  <div className="font-semibold text-gray-900">
-                    {results.leaderboard[2].userName}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {results.leaderboard[2].pointsEarned} pts
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {results.leaderboard[2].accuracy}% accuracy
+
+                  {/* Third Place */}
+                  <div className="text-center order-3 transform hover:scale-105 transition-transform duration-200">
+                    <div className="bg-gradient-to-b from-amber-100 to-amber-200 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 mb-2 sm:mb-3 shadow-lg">
+                      <FaAward className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-amber-600 mx-auto mb-1 sm:mb-2" />
+                      <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-amber-700">#3</div>
+                    </div>
+                    <div className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate px-1">
+                      {results.leaderboard[2].userName}
+                    </div>
+                    <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-600">
+                      {results.leaderboard[2].pointsEarned} pts
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      {results.leaderboard[2].accuracy}%
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Full Leaderboard */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Top 10 Rankings
-              </h2>
-              <div className="text-sm text-gray-600">
-                Showing top 10 of {results.leaderboard.length} participants
+            {/* Full Leaderboard */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-purple-100 overflow-hidden">
+              <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-purple-800">
+                    Top 10 Rankings
+                  </h2>
+                  <div className="text-xs sm:text-sm text-purple-600 font-medium">
+                    Showing top 10 of {results.leaderboard.length} participants
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {results.leaderboard
-                .slice(0, 10)
-                .map((participant: LeaderboardEntry, index: number) => {
-                  const position = index + 1;
-                  return (
-                    <div
-                      key={participant.participantId}
-                      className={`p-6 transition-colors ${getRankStyle(
-                        position
-                      )}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
+              
+              {/* Mobile view - Cards */}
+              <div className="block sm:hidden">
+                {results.leaderboard
+                  .slice(0, 10)
+                  .map((participant: LeaderboardEntry, index: number) => {
+                    const position = index + 1;
+                    return (
+                      <div
+                        key={participant.participantId}
+                        className={`p-4 border-b border-gray-100 ${getRankStyle(position)}`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
                             {getRankIcon(position)}
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
+                              <FaUser className="w-5 h-5 text-white" />
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-purple-700">
+                              {participant.pointsEarned}
+                            </p>
+                            <p className="text-xs text-gray-500">Points</p>
+                          </div>
+                        </div>
+                        <div className="mb-2">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {participant.userName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatWalletAddress(participant.walletAddress)}
+                          </p>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <div>
+                            <span className="text-gray-600">Correct: </span>
+                            <span className="font-semibold">{participant.correctAnswers}/{participant.totalAnswers}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Accuracy: </span>
+                            <span className={`font-bold ${
+                              participant.accuracy >= 80
+                                ? "text-green-600"
+                                : participant.accuracy >= 60
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                            }`}>
+                              {participant.accuracy}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Desktop/Tablet view - Table */}
+              <div className="hidden sm:block divide-y divide-gray-100">
+                {results.leaderboard
+                  .slice(0, 10)
+                  .map((participant: LeaderboardEntry, index: number) => {
+                    const position = index + 1;
+                    return (
+                      <div
+                        key={participant.participantId}
+                        className={`p-4 sm:p-6 transition-all duration-200 ${getRankStyle(position)}`}
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                          <div className="flex items-center space-x-3 sm:space-x-4">
+                            <div className="flex-shrink-0">
+                              {getRankIcon(position)}
+                            </div>
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                                <FaUser className="w-5 h-5 text-white" />
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+                                <FaUser className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                               </div>
                               <div>
-                                <p className="text-lg font-semibold text-gray-900">
+                                <p className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">
                                   {participant.userName}
                                 </p>
-                                <p className="text-sm text-gray-500">
-                                  {formatWalletAddress(
-                                    participant.walletAddress
-                                  )}
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  {formatWalletAddress(participant.walletAddress)}
                                 </p>
                               </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-6 text-right">
-                          <div>
-                            <p className="text-2xl font-bold text-gray-900">
-                              {participant.pointsEarned}
-                            </p>
-                            <p className="text-xs text-gray-500">Quiz Points</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-semibold text-gray-700">
-                              {participant.correctAnswers}/
-                              {participant.totalAnswers}
-                            </p>
-                            <p className="text-xs text-gray-500">Correct</p>
-                          </div>
-                          <div>
-                            <p
-                              className={`text-lg font-semibold ${
+                          
+                          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 ml-0 lg:ml-auto">
+                            <div className="text-center">
+                              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-700">
+                                {participant.pointsEarned}
+                              </p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider">Quiz Points</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm sm:text-base lg:text-lg font-semibold text-gray-700">
+                                {participant.correctAnswers}/{participant.totalAnswers}
+                              </p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider">Correct</p>
+                            </div>
+                            <div className="text-center">
+                              <p className={`text-sm sm:text-base lg:text-lg font-bold ${
                                 participant.accuracy >= 80
                                   ? "text-green-600"
                                   : participant.accuracy >= 60
                                   ? "text-yellow-600"
                                   : "text-red-600"
-                              }`}
-                            >
-                              {participant.accuracy}%
-                            </p>
-                            <p className="text-xs text-gray-500">Accuracy</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">
-                              {participant.totalPoints}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Total Points
-                            </p>
+                              }`}>
+                                {participant.accuracy}%
+                              </p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider">Accuracy</p>
+                            </div>
+                            <div className="text-center hidden xl:block">
+                              <p className="text-sm font-medium text-gray-600">
+                                {participant.totalPoints}
+                              </p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider">Total Points</p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-            </div>
+                    );
+                  })}
+              </div>
 
-            {/* Show More Info */}
-            {results.leaderboard.length > 10 && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    {results.leaderboard.length - 10} more participants not
-                    shown
-                  </div>
-                  <div className="flex gap-3">
+              {/* Show More Info */}
+              {results.leaderboard.length > 10 && (
+                <div className="px-8 py-4 bg-gradient-to-r from-purple-50 to-purple-100 border-t border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-purple-600">
+                      {results.leaderboard.length - 10} more participants not shown
+                    </div>
                     <button
                       onClick={downloadLeaderboard}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-sm text-purple-700 hover:text-purple-900 font-semibold transition-colors"
                     >
                       Download complete list →
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {activeTab === "stats" && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Question Performance Analysis
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {results.questionStats.map((stat: QuestionStat, index: number) => (
-              <div key={stat.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">
-                      Question {index + 1}
-                    </h3>
-                    <p className="text-gray-700">{stat.questionText}</p>
-                  </div>
-                  <div className="ml-6 text-right">
-                    <div
-                      className={`text-2xl font-bold ${
+        {activeTab === "stats" && (
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-purple-100 overflow-hidden">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+              <h2 className="text-base sm:text-lg lg:text-xl font-bold text-purple-800">
+                Question Performance Analysis
+              </h2>
+            </div>
+            
+            <div className="divide-y divide-gray-100">
+              {results.questionStats.map((stat: QuestionStat, index: number) => (
+                <div key={stat.id} className="p-4 sm:p-6 lg:p-8 hover:bg-purple-50 transition-colors duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xs sm:text-sm font-bold text-purple-600 uppercase tracking-wider mb-2">
+                        Question {index + 1}
+                      </h3>
+                      <p className="text-gray-700 text-sm sm:text-base lg:text-lg">{stat.questionText}</p>
+                    </div>
+                    <div className="text-center sm:text-right sm:ml-6">
+                      <div className={`text-2xl sm:text-3xl font-bold ${
                         stat.correctPercentage >= 80
                           ? "text-green-600"
                           : stat.correctPercentage >= 60
                           ? "text-yellow-600"
                           : "text-red-600"
-                      }`}
-                    >
-                      {stat.correctPercentage}%
+                      }`}>
+                        {stat.correctPercentage}%
+                      </div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider">Success Rate</div>
                     </div>
-                    <div className="text-xs text-gray-500">Success Rate</div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-600 mb-3 gap-2">
+                    <span>
+                      <span className="font-semibold text-purple-700">{stat.correctResponses}</span> correct out of{" "}
+                      <span className="font-semibold text-purple-700">{stat.totalResponses}</span> responses
+                    </span>
+                    <IoTrendingUpOutline
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                        stat.correctPercentage >= 60
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    />
+                  </div>
+                  
+                  <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        stat.correctPercentage >= 80
+                          ? "bg-gradient-to-r from-green-400 to-green-600"
+                          : stat.correctPercentage >= 60
+                          ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                          : "bg-gradient-to-r from-red-400 to-red-600"
+                      }`}
+                      style={{ width: `${stat.correctPercentage}%` }}
+                    ></div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                  <span>
-                    {stat.correctResponses} correct out of {stat.totalResponses}{" "}
-                    responses
-                  </span>
-                  <IoTrendingUpOutline
-                    className={`w-4 h-4 ${
-                      stat.correctPercentage >= 60
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  />
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      stat.correctPercentage >= 80
-                        ? "bg-green-500"
-                        : stat.correctPercentage >= 60
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
-                    style={{ width: `${stat.correctPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
