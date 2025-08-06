@@ -6,13 +6,15 @@ import {
   useStreamAddons,
   useGetAgenda,
   useGetQuizQuestions,
+  useGetPollResults,
+  useGetQuizResults,
   useUpdateStreamAgenda,
   useRequirePublicKey,
   type Agenda,
   type AddonType 
 } from '@vidbloq/react';
 
-// Enhanced context value type
+// Enhanced context value type with response data caching
 interface StreamContextValue {
   // Existing agenda state
   activeAgendaId: string | null;
@@ -44,11 +46,25 @@ interface StreamContextValue {
   // Helper to get agenda by ID
   getAgendaById: (id: string) => Agenda | null;
   
-  // Preloaded data cache
+  // Enhanced preloaded data cache for participation
   preloadedPollData: any | null;
   preloadedQuizData: any | null;
   isPreloadingPoll: boolean;
   isPreloadingQuiz: boolean;
+  
+  // NEW: Response data cache for viewing results
+  responseCache: Map<string, {
+    type: 'poll' | 'quiz';
+    data: any;
+    timestamp: number;
+    isLoading: boolean;
+  }>;
+  
+  // NEW: Methods for response data management
+  getResponseData: (agendaId: string, type: 'poll' | 'quiz') => any | null;
+  preloadResponseData: (agendaId: string, type: 'poll' | 'quiz') => Promise<void>;
+  isResponseDataLoading: (agendaId: string) => boolean;
+  clearResponseCache: (agendaId?: string) => void;
   
   // Timer state for auto-stop
   remainingTime: number | null;
@@ -60,16 +76,17 @@ interface StreamContextValue {
 
 export const StreamContext = createContext<StreamContextValue | undefined>(undefined);
 
-// Provider component props
 interface StreamProviderProps {
   children: ReactNode;
 }
 
-// Provider component - now manages addon participation state globally and auto-stop timer
+// Cache TTL in milliseconds (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000;
+
 export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   const [activeAgendaId, setActiveAgendaId] = useState<string | null>(null);
   
-  // New addon participation state
+  // Addon participation state
   const [activeAddonType, setActiveAddonType] = useState<AddonType | null>(null);
   const [participationData, setParticipationData] = useState<any>(null);
   const [isParticipationAvailable, setIsParticipationAvailable] = useState(false);
@@ -77,20 +94,29 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   // Response viewing state
   const [viewingResponsesForAgenda, setViewingResponsesForAgenda] = useState<Agenda | null>(null);
   
-  // Preloaded data cache
+  // Preloaded data cache for participation
   const [preloadedPollData, setPreloadedPollData] = useState<any | null>(null);
   const [preloadedQuizData, setPreloadedQuizData] = useState<any | null>(null);
   const [isPreloadingPoll, setIsPreloadingPoll] = useState(false);
   const [isPreloadingQuiz, setIsPreloadingQuiz] = useState(false);
   
-  // Timer state for auto-stop
+  // NEW: Response data cache with Map for better performance
+  const [responseCache, setResponseCache] = useState<Map<string, {
+    type: 'poll' | 'quiz';
+    data: any;
+    timestamp: number;
+    isLoading: boolean;
+  }>>(new Map());
+  
+  // Timer state
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const activeAgendaRef = useRef<Agenda | null>(null);
   
-  // Track which agenda IDs we've already preloaded
+  // Track preloaded agenda IDs
   const preloadedAgendaIds = useRef<Set<string>>(new Set());
+  const responsePreloadQueue = useRef<Set<string>>(new Set());
   
   const { roomName } = useOriginalStreamContext();
   const { agendas, getStreamAgenda, isLoading } = useGetStreamAgenda();
@@ -101,24 +127,127 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   // Hooks for preloading
   const { getAgenda: getPollAgenda } = useGetAgenda();
   const { getQuizQuestions } = useGetQuizQuestions();
-
-  console.log('StreamProvider:', { 
-    activeAgendaId, 
-    agendas: agendas?.length,
-    activeAddonType,
-    isParticipationAvailable,
-    preloadedPollData: !!preloadedPollData,
-    preloadedQuizData: !!preloadedQuizData,
-    remainingTime,
-    isTimerRunning
-  });
+  
+  // NEW: Hooks for getting response data
+  const { getPollResults } = useGetPollResults();
+  const { getQuizResults } = useGetQuizResults();
 
   // Helper to get agenda by ID
   const getAgendaById = useCallback((id: string): Agenda | null => {
     return agendas?.find(agenda => agenda.id === id) || null;
   }, [agendas]);
 
-  // Method to mark agenda as completed using the update endpoint
+  // NEW: Get cached response data
+  const getResponseData = useCallback((agendaId: string, type: 'poll' | 'quiz'): any | null => {
+    const cacheKey = `${agendaId}-${type}`;
+    const cached = responseCache.get(cacheKey);
+    
+    if (!cached) return null;
+    
+    // Check if cache is still valid
+    const now = Date.now();
+    if (now - cached.timestamp > CACHE_TTL) {
+      // Cache expired, remove it
+      const newCache = new Map(responseCache);
+      newCache.delete(cacheKey);
+      setResponseCache(newCache);
+      return null;
+    }
+    
+    return cached.data;
+  }, [responseCache]);
+
+  // NEW: Check if response data is currently loading
+  const isResponseDataLoading = useCallback((agendaId: string): boolean => {
+    const pollKey = `${agendaId}-poll`;
+    const quizKey = `${agendaId}-quiz`;
+    
+    const pollCache = responseCache.get(pollKey);
+    const quizCache = responseCache.get(quizKey);
+    
+    return (pollCache?.isLoading || false) || (quizCache?.isLoading || false);
+  }, [responseCache]);
+
+  // NEW: Preload response data in background
+  const preloadResponseData = useCallback(async (agendaId: string, type: 'poll' | 'quiz') => {
+    const cacheKey = `${agendaId}-${type}`;
+    
+    // Check if already loading or cached
+    const existing = responseCache.get(cacheKey);
+    if (existing?.isLoading) {
+      console.log(`Already loading ${type} results for ${agendaId}`);
+      return;
+    }
+    
+    // Check if cache is still valid
+    if (existing && (Date.now() - existing.timestamp < CACHE_TTL)) {
+      console.log(`Using cached ${type} results for ${agendaId}`);
+      return;
+    }
+    
+    console.log(`Preloading ${type} results for agenda ${agendaId}`);
+    
+    // Mark as loading
+    const newCache = new Map(responseCache);
+    newCache.set(cacheKey, {
+      type,
+      data: existing?.data || null,
+      timestamp: existing?.timestamp || Date.now(),
+      isLoading: true
+    });
+    setResponseCache(newCache);
+    
+    try {
+      let data = null;
+      
+      if (type === 'poll') {
+        data = await getPollResults(agendaId);
+      } else if (type === 'quiz') {
+        data = await getQuizResults(agendaId);
+      }
+      
+      // Update cache with loaded data
+      const updatedCache = new Map(responseCache);
+      updatedCache.set(cacheKey, {
+        type,
+        data,
+        timestamp: Date.now(),
+        isLoading: false
+      });
+      setResponseCache(updatedCache);
+      
+      console.log(`Successfully preloaded ${type} results for ${agendaId}`);
+    } catch (error) {
+      console.error(`Error preloading ${type} results:`, error);
+      
+      // Mark as not loading on error
+      const updatedCache = new Map(responseCache);
+      const current = updatedCache.get(cacheKey);
+      if (current) {
+        updatedCache.set(cacheKey, {
+          ...current,
+          isLoading: false
+        });
+        setResponseCache(updatedCache);
+      }
+    }
+  }, [responseCache, getPollResults, getQuizResults]);
+
+  // NEW: Clear response cache
+  const clearResponseCache = useCallback((agendaId?: string) => {
+    if (agendaId) {
+      const newCache = new Map(responseCache);
+      newCache.delete(`${agendaId}-poll`);
+      newCache.delete(`${agendaId}-quiz`);
+      setResponseCache(newCache);
+      console.log(`Cleared response cache for agenda ${agendaId}`);
+    } else {
+      setResponseCache(new Map());
+      console.log('Cleared all response cache');
+    }
+  }, [responseCache]);
+
+  // Mark agenda as completed
   const markAgendaAsCompleted = useCallback(async (agendaId: string): Promise<boolean> => {
     if (!publicKey) {
       console.error('No public key available to mark agenda as completed');
@@ -128,7 +257,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     try {
       console.log(`Marking agenda ${agendaId} as completed`);
       
-      // Use the update endpoint to set isCompleted to true
       const result = await updateStreamAgenda(agendaId, {
         wallet: publicKey.toString(),
         isCompleted: true
@@ -136,7 +264,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
 
       if (result) {
         console.log('Agenda marked as completed successfully');
-        // Refresh the agendas list to reflect the change
         if (roomName) {
           getStreamAgenda(roomName);
         }
@@ -148,25 +275,20 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
       console.error('Error marking agenda as completed:', error);
       return false;
     }
-  }, [publicKey, updateStreamAgenda, roomName]);
+  }, [publicKey, updateStreamAgenda, roomName, getStreamAgenda]);
 
-  // Auto-stop function when timer expires
+  // Timer management
   const handleTimerExpired = useCallback(async () => {
     console.log('Timer expired, auto-stopping addon:', activeAddonType);
     
     if (activeAddonType && activeAgendaId) {
       try {
-        // Mark as completed first
         await markAgendaAsCompleted(activeAgendaId);
-        
-        // Then stop the addon
         await stopAddon(activeAddonType);
         console.log('Addon auto-stopped successfully');
         
-        // Force clear all addon state after auto-stop
         setTimeout(() => {
           clearAddonState();
-          // Force a re-sync to ensure UI updates
           syncAddonState();
         }, 100);
       } catch (error) {
@@ -174,7 +296,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
       }
     }
     
-    // Clear timer state
     setIsTimerRunning(false);
     setRemainingTime(null);
     activeAgendaRef.current = null;
@@ -186,7 +307,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
       timerRef.current = setTimeout(() => {
         setRemainingTime(prev => {
           if (prev === null || prev <= 1) {
-            // Timer expired
             handleTimerExpired();
             return 0;
           }
@@ -202,10 +322,9 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     };
   }, [isTimerRunning, remainingTime, handleTimerExpired]);
 
-  // Start timer when agenda with duration becomes active
   const startAgendaTimer = useCallback((agenda: Agenda) => {
     if (agenda.duration && Number(agenda.duration) > 0) {
-      const durationInSeconds = Number(agenda.duration) * 60; // Convert minutes to seconds
+      const durationInSeconds = Number(agenda.duration) * 60;
       console.log(`Starting auto-stop timer for agenda ${agenda.id}: ${agenda.duration} minutes`);
       
       setRemainingTime(durationInSeconds);
@@ -214,7 +333,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Stop timer
   const stopAgendaTimer = useCallback(() => {
     console.log('Stopping agenda timer');
     
@@ -227,9 +345,8 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     activeAgendaRef.current = null;
   }, []);
 
-  // Preload addon data when an addon becomes active
+  // Preload addon participation data
   const preloadAddonData = useCallback(async (addonType: AddonType, agendaId: string) => {
-    // Skip if already preloaded
     if (preloadedAgendaIds.current.has(agendaId)) {
       console.log(`Data for agenda ${agendaId} already preloaded, skipping`);
       return;
@@ -262,11 +379,51 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     }
   }, [getPollAgenda, getQuizQuestions]);
 
-  // Sync addon state whenever activeAddons changes
+  // NEW: Background preloading of response data when agenda becomes active or completed
+  useEffect(() => {
+    if (!agendas) return;
+    
+    // Find agendas that are active or completed
+    const agendasToPreload = agendas.filter(agenda => {
+      // Preload if:
+      // 1. Agenda is completed
+      // 2. Agenda is currently active
+      // 3. Agenda has Poll or Quiz action
+      const shouldPreload = (
+        agenda.isCompleted || 
+        (activeAgendaId === agenda.id)
+      ) && (
+        agenda.action === 'Poll' || 
+        agenda.action === 'Quiz'
+      );
+      
+      return shouldPreload;
+    });
+    
+    // Queue preloading for each eligible agenda
+    agendasToPreload.forEach(agenda => {
+      const queueKey = agenda.id;
+      
+      // Skip if already in queue
+      if (responsePreloadQueue.current.has(queueKey)) return;
+      
+      responsePreloadQueue.current.add(queueKey);
+      
+      // Determine type and preload
+      const type = agenda.action === 'Poll' ? 'poll' : 'quiz';
+      
+      // Delay slightly to avoid overwhelming the API
+      setTimeout(() => {
+        preloadResponseData(agenda.id, type);
+        responsePreloadQueue.current.delete(queueKey);
+      }, Math.random() * 2000); // Random delay up to 2 seconds
+    });
+  }, [agendas, activeAgendaId, preloadResponseData]);
+
+  // Sync addon state
   const syncAddonState = useCallback(() => {
     console.log('Syncing addon state:', activeAddons);
     
-    // Check which addon is currently active
     const activePoll = activeAddons?.Poll?.isActive;
     const activeQuiz = activeAddons?.Quiz?.isActive;
     const activeQA = activeAddons?.["Q&A"]?.isActive;
@@ -285,14 +442,12 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
       currentParticipationData = activeAddons["Q&A"]?.data;
     }
     
-    // Check if addon state changed
     const addonChanged = currentAddonType !== activeAddonType;
     
     setActiveAddonType(currentAddonType);
     setParticipationData(currentParticipationData);
     setIsParticipationAvailable(!!currentAddonType);
     
-    // Extract agenda ID from addon data if available
     if (currentParticipationData?.agendaId) {
       const newAgendaId = currentParticipationData.agendaId;
       
@@ -300,37 +455,37 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
         console.log('Setting agenda ID from addon data:', newAgendaId);
         setActiveAgendaId(newAgendaId);
         
-        // Start timer if this is a new agenda with duration
         const agenda = getAgendaById(newAgendaId);
         if (agenda && addonChanged) {
           startAgendaTimer(agenda);
+          
+          // Preload response data as soon as addon starts
+          if (currentAddonType === 'Poll' || currentAddonType === 'Quiz') {
+            const type = currentAddonType === 'Poll' ? 'poll' : 'quiz';
+            preloadResponseData(newAgendaId, type);
+          }
         }
       }
       
-      // Preload data as soon as addon becomes active
       if (currentAddonType && (currentAddonType === 'Poll' || currentAddonType === 'Quiz')) {
         preloadAddonData(currentAddonType, newAgendaId);
       }
     }
     
-    // Clear agenda ID and stop timer when no addon is active
     if (!currentAddonType && activeAgendaId) {
       console.log('No active addon, clearing agenda ID and stopping timer');
       setActiveAgendaId(null);
       stopAgendaTimer();
     }
-  }, [activeAddons, activeAgendaId, activeAddonType, preloadAddonData, getAgendaById, startAgendaTimer, stopAgendaTimer]);
+  }, [activeAddons, activeAgendaId, activeAddonType, preloadAddonData, getAgendaById, startAgendaTimer, stopAgendaTimer, preloadResponseData]);
 
-  // Auto-sync addon state whenever activeAddons changes
   useEffect(() => {
     syncAddonState();
   }, [syncAddonState]);
 
-  // Clear addon state - now also marks agenda as completed
   const clearAddonState = useCallback(async () => {
     console.log("Clearing addon state - participants will be redirected");
     
-    // Mark the current agenda as completed before clearing
     if (activeAgendaId) {
       await markAgendaAsCompleted(activeAgendaId);
     }
@@ -340,35 +495,37 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     setIsParticipationAvailable(false);
     setActiveAgendaId(null);
     stopAgendaTimer();
-    // Note: We intentionally don't clear preloaded data here
-    // so it remains cached for future use
   }, [stopAgendaTimer, activeAgendaId, markAgendaAsCompleted]);
 
-  // Clear preloaded data when agenda changes
+  // Clean up old cache entries periodically
   useEffect(() => {
-    if (!activeAgendaId) {
-      // When no agenda is active, clear the cache after a delay
-      // This gives time for transitions but prevents memory bloat
-      const timer = setTimeout(() => {
-        if (!activeAgendaId) { // Double-check it's still inactive
-          console.log('Clearing preloaded data cache');
-          setPreloadedPollData(null);
-          setPreloadedQuizData(null);
-          preloadedAgendaIds.current.clear();
-        }
-      }, 30000); // Clear after 30 seconds of inactivity
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      const newCache = new Map(responseCache);
+      let hasChanges = false;
       
-      return () => clearTimeout(timer);
-    }
-  }, [activeAgendaId]);
+      newCache.forEach((value, key) => {
+        if (now - value.timestamp > CACHE_TTL && !value.isLoading) {
+          newCache.delete(key);
+          hasChanges = true;
+          console.log(`Cleaned up expired cache entry: ${key}`);
+        }
+      });
+      
+      if (hasChanges) {
+        setResponseCache(newCache);
+      }
+    }, 60000); // Run cleanup every minute
+    
+    return () => clearInterval(cleanupInterval);
+  }, [responseCache]);
 
-  // Fetch agendas when roomName is available
   useEffect(() => {
     if (roomName) {
       console.log('Fetching agendas for room:', roomName);
       getStreamAgenda(roomName);
     }
-  }, [roomName]);
+  }, [roomName, getStreamAgenda]);
 
   const isActive = (agendaId: string): boolean => {
     return activeAgendaId === agendaId;
@@ -380,7 +537,6 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     }
   };
 
-  // Compute participation tab properties
   const hasActiveAddon = isParticipationAvailable;
   const shouldShowParticipationTab = hasActiveAddon;
   
@@ -399,47 +555,35 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   }
 
   const value: StreamContextValue = {
-    // Existing agenda state
     activeAgendaId,
     setActiveAgendaId,
     isActive,
     agendas,
     isLoadingAgendas: isLoading,
     refetchAgendas,
-    
-    // New addon participation state
     activeAddonType,
     isParticipationAvailable,
     participationData,
     hasActiveAddon,
-    
-    // Participation indicators
     shouldShowParticipationTab,
     participationTabLabel,
     participationTabIcon,
-    
-    // Methods
     syncAddonState,
     clearAddonState,
-    
-    // Response viewing state
     viewingResponsesForAgenda,
     setViewingResponsesForAgenda,
-    
-    // Helper methods
     getAgendaById,
-    
-    // Preloaded data
     preloadedPollData,
     preloadedQuizData,
     isPreloadingPoll,
     isPreloadingQuiz,
-    
-    // Timer state
+    responseCache,
+    getResponseData,
+    preloadResponseData,
+    isResponseDataLoading,
+    clearResponseCache,
     remainingTime,
     isTimerRunning,
-    
-    // Completion method
     markAgendaAsCompleted,
   };
 

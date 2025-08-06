@@ -45,7 +45,7 @@ const AddonResponseViewer: React.FC<AddonResponseViewerProps> = ({
   const getAddonColor = () => {
     switch (agenda.action) {
       case "Poll":
-        return "from-green-50 to-green-100 border-green-200";
+        return "from-purple-50 to-purple-100 border-purple-200";
       case "Quiz":
         return "from-purple-50 to-purple-100 border-purple-200";
       case "Q_A":

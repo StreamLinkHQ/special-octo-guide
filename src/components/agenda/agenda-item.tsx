@@ -217,7 +217,7 @@ const AgendaItem = ({ item, onEdit, onDelete, onViewResponses, onRefresh }: Agen
             <div className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-500">
               {item.timeStamp}m
             </div>
-            {isHost && (
+            {(isHost || isCurrentlyActive || item.isCompleted) && (
               <AgendaItemMenu
                 item={item}
                 isCurrentlyActive={isCurrentlyActive}
@@ -316,6 +316,11 @@ const AgendaItemMenu = ({
   onViewResponses 
 }: AgendaItemMenuProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const { publicKey } = useRequirePublicKey();
+  const { streamMetadata } = useStreamContext();
+  
+  // Check if user is host
+  const isHost = streamMetadata.creatorWallet === publicKey?.toString();
 
   return (
     <div className="relative">
@@ -330,63 +335,84 @@ const AgendaItemMenu = ({
             onClick={() => setIsOpen(false)}
           />
           <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20 min-w-[140px]">
-            {/* Edit - disabled for completed items */}
-            <div
-              onClick={!item.isCompleted ? onEdit : undefined}
-              className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
-                item.isCompleted 
-                  ? 'text-gray-400 cursor-not-allowed' 
-                  : 'text-gray-700 hover:bg-gray-100 cursor-pointer'
-              }`}
-            >
-              <CiEdit />
-              Edit
-            </div>
-            
-            {/* View Responses - only show if addon is active or completed */}
-            {(isCurrentlyActive || item.isCompleted) && (
-              <div
-                className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
-                onClick={onViewResponses}
-              >
-                <FaEye />
-                View Responses
-              </div>
-            )}
-            
-            {/* Start/Stop Toggle - disabled for completed items */}
-            {!item.isCompleted && (
-              isCurrentlyActive ? (
+            {/* Guest users only see View Responses */}
+            {!isHost ? (
+              // Guests can only view responses if agenda is active or completed
+              (isCurrentlyActive || item.isCompleted) && (
                 <div
-                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
-                  onClick={onStop}
+                  className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                  onClick={onViewResponses}
                 >
-                  <VscDebugStop />
-                  Stop{item.duration ? ' Early' : ''}
-                </div>
-              ) : (
-                <div
-                  className="w-full px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 cursor-pointer"
-                  onClick={onStart}
-                >
-                  <VscDebugStart />
-                  Start
+                  <FaEye />
+                  View Responses
                 </div>
               )
+            ) : (
+              // Host menu options based on status
+              <>
+                {/* COMPLETED STATE: Only View Responses */}
+                {item.isCompleted && (
+                  <div
+                    className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                    onClick={onViewResponses}
+                  >
+                    <FaEye />
+                    View Responses
+                  </div>
+                )}
+
+                {/* ACTIVE STATE: View Responses and Stop */}
+                {!item.isCompleted && isCurrentlyActive && (
+                  <>
+                    <div
+                      className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                      onClick={onViewResponses}
+                    >
+                      <FaEye />
+                      View Responses
+                    </div>
+                    <div
+                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+                      onClick={onStop}
+                    >
+                      <VscDebugStop />
+                      Stop{item.duration ? ' Early' : ''}
+                    </div>
+                  </>
+                )}
+
+                {/* NOT ACTIVE STATE: Edit, Start, and Delete */}
+                {!item.isCompleted && !isCurrentlyActive && (
+                  <>
+                    <div
+                      onClick={onEdit}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
+                    >
+                      <CiEdit />
+                      Edit
+                    </div>
+                    <div
+                      className="w-full px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 cursor-pointer"
+                      onClick={onStart}
+                    >
+                      <VscDebugStart />
+                      Start
+                    </div>
+                    <div
+                      onClick={!isDeleting ? onDelete : undefined}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                        isDeleting 
+                          ? 'text-gray-400 cursor-not-allowed' 
+                          : 'text-red-600 hover:bg-red-50 cursor-pointer'
+                      }`}
+                    >
+                      <MdDelete />
+                      {isDeleting ? 'Deleting...' : 'Delete'}
+                    </div>
+                  </>
+                )}
+              </>
             )}
-            
-            {/* Delete - show loading state */}
-            <div
-              onClick={!isDeleting ? onDelete : undefined}
-              className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
-                isDeleting 
-                  ? 'text-gray-400 cursor-not-allowed' 
-                  : 'text-red-600 hover:bg-red-50 cursor-pointer'
-              }`}
-            >
-              <MdDelete />
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </div>
           </div>
         </>
       )}
