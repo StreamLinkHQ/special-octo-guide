@@ -288,26 +288,26 @@ Total options: ${results.options.length}
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
+             <div className="flex flex-row gap-2 sm:gap-3 mt-4 lg:mt-0">
               <button
                 onClick={downloadPollResults}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
               >
-                <MdOutlineFileDownload className="w-4 h-4" />
-                Download CSV
+             <MdOutlineFileDownload className="w-3 h-3 sm:w-4 sm:h-4" />
+               <span className="hidden sm:inline">Download</span> CSV
               </button>
               <button
                 onClick={downloadDetailedReport}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
               >
-                <FiFileText className="w-4 h-4" />
-                Full Report
+                  <FiFileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                               <span className="hidden sm:inline">Full</span> Report
               </button>
               <button
                 onClick={handleRefresh}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-xl hover:bg-purple-50 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                  className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-lg sm:rounded-xl hover:bg-purple-50 hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
               >
-                <FiTrendingUp className="w-4 h-4" />
+                <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 Refresh
               </button>
             </div>
