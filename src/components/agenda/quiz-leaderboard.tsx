@@ -4,8 +4,9 @@ import { FaAward, FaMedal, FaUser } from "react-icons/fa";
 import { VscTarget } from "react-icons/vsc";
 import { MdOutlineFileDownload } from "react-icons/md";
 import { FiFileText } from "react-icons/fi";
-import { useGetQuizResults } from "@vidbloq/react";
-import { useStream } from "../../hooks"; // Using the proper hook
+import { RiMoneyDollarCircleLine } from "react-icons/ri";
+import { useGetQuizResults, useTransaction, useNotification, useRequirePublicKey, getTokenBalance } from "@vidbloq/react";
+import { useStream } from "../../hooks";
 
 // Types based on your hook interfaces
 interface QuestionStat {
@@ -31,11 +32,175 @@ interface QuizLeaderboardProps {
   agendaId?: string;
 }
 
+// Reward Modal Component
+const RewardModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  winners: LeaderboardEntry[];
+  onConfirm: (amount: number, perPerson: boolean) => void;
+}> = ({ isOpen, onClose, winners, onConfirm }) => {
+  const [rewardAmount, setRewardAmount] = useState<string>('');
+  const [isPerPerson, setIsPerPerson] = useState<boolean>(true);
+  const [balance, setBalance] = useState<number>(0);
+  const { publicKey } = useRequirePublicKey();
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (publicKey) {
+        const balanceData = await getTokenBalance(publicKey.toString());
+        setBalance(balanceData.onChainBalance.usdc);
+      }
+    };
+    if (isOpen) {
+      fetchBalance();
+    }
+  }, [isOpen, publicKey]);
+
+  const totalAmount = isPerPerson 
+    ? parseFloat(rewardAmount || '0') * winners.length 
+    : parseFloat(rewardAmount || '0');
+  
+  const perPersonAmount = isPerPerson 
+    ? parseFloat(rewardAmount || '0')
+    : parseFloat(rewardAmount || '0') / winners.length;
+
+  const isValidAmount = () => {
+    const amount = parseFloat(rewardAmount);
+    return !isNaN(amount) && amount > 0 && totalAmount <= balance;
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      
+      <div className="relative w-full max-w-lg bg-white rounded-3xl p-8 shadow-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Reward Winners</h2>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <div className="bg-purple-50 rounded-xl p-4 mb-4">
+            <p className="text-sm text-purple-700 mb-2">Rewarding {winners.length} winner{winners.length > 1 ? 's' : ''}:</p>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {winners.slice(0, 5).map((winner, idx) => (
+                <div key={winner.participantId} className="text-xs text-gray-600">
+                  #{idx + 1} {winner.userName} • {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
+                </div>
+              ))}
+              {winners.length > 5 && (
+                <div className="text-xs text-gray-500 italic">
+                  ...and {winners.length - 5} more
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Reward Amount (USDC)</label>
+              <span className="text-xs text-gray-500">Balance: {balance.toFixed(2)} USDC</span>
+            </div>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={rewardAmount}
+              onChange={(e) => setRewardAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Distribution Method</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsPerPerson(true)}
+                className={`py-3 px-4 rounded-xl font-medium transition-all ${
+                  isPerPerson 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Per Person
+              </button>
+              <button
+                onClick={() => setIsPerPerson(false)}
+                className={`py-3 px-4 rounded-xl font-medium transition-all ${
+                  !isPerPerson 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Split Total
+              </button>
+            </div>
+          </div>
+
+          {rewardAmount && parseFloat(rewardAmount) > 0 && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Per person:</span>
+                <span className="font-semibold">{perPersonAmount.toFixed(2)} USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total cost:</span>
+                <span className="font-semibold">{totalAmount.toFixed(2)} USDC</span>
+              </div>
+              {totalAmount > balance && (
+                <div className="text-red-500 text-xs mt-2">
+                  Insufficient balance. You need {(totalAmount - balance).toFixed(2)} more USDC.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(parseFloat(rewardAmount), isPerPerson)}
+            disabled={!isValidAmount()}
+            className={`flex-1 py-3 px-6 font-semibold rounded-xl transition-all ${
+              isValidAmount()
+                ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Send Rewards
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
   const [activeTab, setActiveTab] = useState<"leaderboard" | "stats">("leaderboard");
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [selectedWinners, setSelectedWinners] = useState<LeaderboardEntry[]>([]);
+  const [isProcessingRewards, setIsProcessingRewards] = useState(false);
+  const [transactionFetched, setTransactionFetched] = useState(false);
   
-  // Use the hook for API calls
+  // Hooks
   const { getQuizResults, isLoading: isLoadingFromHook, results: hookResults } = useGetQuizResults();
+  const { addNotification } = useNotification();
+  const { publicKey } = useRequirePublicKey();
   
   // Use the stream context properly with useStream hook
   const { 
@@ -55,6 +220,64 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
   
   // Track if we've fetched for this agenda
   const [hasFetched, setHasFetched] = useState(false);
+
+  // Transaction hook for rewards
+  const [rewardRecipients, setRewardRecipients] = useState<Array<{publicKey: string; amount: number}>>([]);
+  const {
+    fetchTransaction,
+    signAndSubmitTransaction,
+    transactionBase64,
+    transactionSignature,
+    error: transactionError,
+    loading: transactionLoading,
+  } = useTransaction({
+    recipients: rewardRecipients,
+  });
+
+  // Handle transaction signing
+  useEffect(() => {
+    const handleTransactionSign = async () => {
+      if (transactionBase64 && transactionFetched) {
+        try {
+          await signAndSubmitTransaction();
+          if (transactionSignature) {
+            addNotification({
+              type: "success",
+              message: `Successfully rewarded ${selectedWinners.length} winner${selectedWinners.length > 1 ? 's' : ''}!`,
+              duration: 5000,
+            });
+            setShowRewardModal(false);
+            setSelectedWinners([]);
+            setRewardRecipients([]);
+          }
+        } catch (error) {
+          console.error("Error in signing transaction:", error);
+          addNotification({
+            type: "error",
+            message: error instanceof Error ? error.message : "Failed to send rewards",
+            duration: 3000,
+          });
+        } finally {
+          setTransactionFetched(false);
+          setIsProcessingRewards(false);
+        }
+      }
+    };
+
+    handleTransactionSign();
+  }, [transactionBase64, transactionFetched, transactionSignature, selectedWinners.length, addNotification, signAndSubmitTransaction]);
+
+  // Show transaction error if it occurs
+  useEffect(() => {
+    if (transactionError) {
+      addNotification({
+        type: "error",
+        message: transactionError,
+        duration: 3000,
+      });
+      setIsProcessingRewards(false);
+    }
+  }, [transactionError, addNotification]);
 
   const fetchQuizResults = async () => {
     if (!agendaId) {
@@ -77,11 +300,9 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
 
   useEffect(() => {
     if (agendaId && !cachedData && !hasFetched && !isCacheLoading) {
-      // No cached data and haven't fetched yet, fetch now
       fetchQuizResults();
       setHasFetched(true);
     } else if (cachedData) {
-      // We have cached data, no need to fetch
       console.log('Using cached quiz results for agenda:', agendaId);
       setHasFetched(true);
     }
@@ -89,11 +310,51 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({ agendaId }) => {
 
   const handleRefresh = async () => {
     if (!agendaId) return;
-    
-    // Clear cache for this agenda and refetch
     clearResponseCache(agendaId);
     setHasFetched(false);
     await fetchQuizResults();
+  };
+
+  const handleRewardClick = (count: 1 | 5 | 10) => {
+    if (!results || !publicKey) {
+      addNotification({
+        type: "error",
+        message: "Please connect your wallet first",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    const winners = results.leaderboard.slice(0, count);
+    setSelectedWinners(winners);
+    setShowRewardModal(true);
+  };
+
+  const handleConfirmReward = async (amount: number, isPerPerson: boolean) => {
+    if (!selectedWinners.length || amount <= 0) return;
+
+    const amountPerPerson = isPerPerson ? amount : amount / selectedWinners.length;
+    
+    const recipients = selectedWinners.map(winner => ({
+      publicKey: winner.walletAddress,
+      amount: amountPerPerson,
+    }));
+
+    setRewardRecipients(recipients);
+    setIsProcessingRewards(true);
+
+    try {
+      await fetchTransaction();
+      setTransactionFetched(true);
+    } catch (error) {
+      console.error("Error fetching transaction:", error);
+      addNotification({
+        type: "error",
+        message: "Failed to prepare reward transaction",
+        duration: 3000,
+      });
+      setIsProcessingRewards(false);
+    }
   };
 
   const getRankIcon = (position: number): JSX.Element => {
@@ -343,8 +604,49 @@ ${results.leaderboard
               </div>
             </div>
 
-            {/* Download Actions */}
-            <div className="flex flex-row gap-2 sm:gap-3 mt-4 lg:mt-0">
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 lg:mt-0">
+              {/* Reward Dropdown */}
+              {publicKey && results.leaderboard.length > 0 && (
+                <div className="relative group">
+                  <button
+                    className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
+                    disabled={isProcessingRewards || transactionLoading}
+                  >
+                    <RiMoneyDollarCircleLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Reward</span>
+                  </button>
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                    <div className="py-2">
+                      <button
+                        onClick={() => handleRewardClick(1)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-purple-50 transition-colors flex items-center justify-between"
+                      >
+                        <span>Top Winner</span>
+                        <span className="text-xs text-gray-500">1 person</span>
+                      </button>
+                      <button
+                        onClick={() => handleRewardClick(5)}
+                        disabled={results.leaderboard.length < 5}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-purple-50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span>Top 5 Winners</span>
+                        <span className="text-xs text-gray-500">5 people</span>
+                      </button>
+                      <button
+                        onClick={() => handleRewardClick(10)}
+                        disabled={results.leaderboard.length < 10}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-purple-50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span>Top 10 Winners</span>
+                        <span className="text-xs text-gray-500">10 people</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Download Actions */}
               <button
                 onClick={downloadLeaderboard}
                 className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium text-xs sm:text-sm"
@@ -686,6 +988,14 @@ ${results.leaderboard
           </div>
         )}
       </div>
+
+      {/* Reward Modal */}
+      <RewardModal
+        isOpen={showRewardModal}
+        onClose={() => setShowRewardModal(false)}
+        winners={selectedWinners}
+        onConfirm={handleConfirmReward}
+      />
     </div>
   );
 };
