@@ -1,7 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useParticipantNotifications } from '@vidbloq/react';
 
-
 // Global flag to ensure only one instance is active
 let notificationsInstanceActive = false;
 

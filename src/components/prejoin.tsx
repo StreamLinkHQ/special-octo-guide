@@ -20,6 +20,7 @@ const Prejoin = () => {
   });
   const {
     streamMetadata: { creatorWallet, streamSessionType },
+    // isLoadingStreamMetadata
   } = useStreamContext();
 
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -97,7 +98,8 @@ const Prejoin = () => {
           </div>
         </div>
       </StreamLayout>
-      {isLoading && <Loading />}
+       {(isLoading) && <Loading />}
+      {/* {(isLoading || isLoadingStreamMetadata) && <Loading />} */}
     </>
   );
 };

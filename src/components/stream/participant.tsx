@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type Participant } from "@vidbloq/react";
-import { Icon } from "../icons";
 import { useWallet } from "@civic/auth-web3/react";
+import { Icon } from "../icons";
 
 type ParticipantSmallProps = {
   participant: Participant;

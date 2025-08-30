@@ -33,7 +33,10 @@ interface CreateAgendaProps {
   onSwitchToExisting?: () => void;
 }
 
-const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps = {}) => {
+const CreateAgenda = ({
+  onAgendaCreated,
+  onSwitchToExisting,
+}: CreateAgendaProps = {}) => {
   const [selectedType, setSelectedType] = useState<AgendaAction | null>(null);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,7 +65,7 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
     },
   ]);
 
-  const { createAgenda, isLoading } = useCreateAgenda();
+  const { createAgenda, isLoading, error } = useCreateAgenda();
   const { agendas, getStreamAgenda } = useGetStreamAgenda();
 
   const { roomName } = useStreamContext();
@@ -104,10 +107,77 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
     },
   ];
 
+  // useEffect(() => {
+  //   getStreamAgenda(roomName);
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [roomName]);
+
   useEffect(() => {
-    getStreamAgenda(roomName);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomName]);
+    if (roomName) {
+      getStreamAgenda(roomName);
+    }
+  }, [roomName, getStreamAgenda]);
+
+  // Show error toast if create agenda fails
+  useEffect(() => {
+    if (error) {
+      const isRateLimited = error.message?.includes("Rate limit exceeded");
+      toast.error(
+        isRateLimited
+          ? "Too many agenda operations. Please wait a moment before trying again."
+          : error.message || "Failed to create agenda"
+      );
+    }
+  }, [error]);
+
+  // const handleAddPollOption = () => {
+  //   setPollOptions([...pollOptions, { id: Date.now().toString(), text: "" }]);
+  // };
+
+  // const handleRemovePollOption = (id: string) => {
+  //   if (pollOptions.length > 2) {
+  //     setPollOptions(pollOptions.filter((opt) => opt.id !== id));
+  //   }
+  // };
+
+  // const handlePollOptionChange = (id: string, value: string) => {
+  //   setPollOptions(
+  //     pollOptions.map((opt) => (opt.id === id ? { ...opt, text: value } : opt))
+  //   );
+  // };
+
+  // const handleAddQuizQuestion = () => {
+  //   setQuizQuestions([
+  //     ...quizQuestions,
+  //     {
+  //       id: Date.now().toString(),
+  //       questionText: "",
+  //       isMultiChoice: true,
+  //       points: 10,
+  //       correctAnswer: "",
+  //       answers: [
+  //         { id: Date.now().toString() + "1", text: "" },
+  //         { id: Date.now().toString() + "2", text: "" },
+  //       ],
+  //     },
+  //   ]);
+  // };
+
+  // const handleRemoveQuizQuestion = (id: string) => {
+  //   if (quizQuestions.length > 1) {
+  //     setQuizQuestions(quizQuestions.filter((q) => q.id !== id));
+  //   }
+  // };
+
+  // const handleQuizQuestionChange = (
+  //   id: string,
+  //   field: keyof QuizQuestionForm,
+  //   value: any
+  // ) => {
+  //   setQuizQuestions(
+  //     quizQuestions.map((q) => (q.id === id ? { ...q, [field]: value } : q))
+  //   );
+  // };
 
   const handleAddPollOption = () => {
     setPollOptions([...pollOptions, { id: Date.now().toString(), text: "" }]);
@@ -157,6 +227,159 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
       quizQuestions.map((q) => (q.id === id ? { ...q, [field]: value } : q))
     );
   };
+
+  // const handleQuizTypeChange = (questionId: string, isMultiChoice: boolean) => {
+  //   setQuizQuestions(
+  //     quizQuestions.map((q) => {
+  //       if (q.id === questionId) {
+  //         return {
+  //           ...q,
+  //           isMultiChoice,
+  //           correctAnswer: "",
+  //           answers: isMultiChoice
+  //             ? [
+  //                 { id: Date.now().toString() + "1", text: "" },
+  //                 { id: Date.now().toString() + "2", text: "" },
+  //               ]
+  //             : [],
+  //         };
+  //       }
+  //       return q;
+  //     })
+  //   );
+  // };
+
+  // const handleAddQuizAnswer = (questionId: string) => {
+  //   setQuizQuestions(
+  //     quizQuestions.map((q) => {
+  //       if (q.id === questionId) {
+  //         return {
+  //           ...q,
+  //           answers: [...q.answers, { id: Date.now().toString(), text: "" }],
+  //         };
+  //       }
+  //       return q;
+  //     })
+  //   );
+  // };
+
+  // const handleRemoveQuizAnswer = (questionId: string, answerId: string) => {
+  //   setQuizQuestions(
+  //     quizQuestions.map((q) => {
+  //       if (q.id === questionId && q.answers.length > 2) {
+  //         return {
+  //           ...q,
+  //           answers: q.answers.filter((a) => a.id !== answerId),
+  //         };
+  //       }
+  //       return q;
+  //     })
+  //   );
+  // };
+
+  // const handleQuizAnswerChange = (
+  //   questionId: string,
+  //   answerId: string,
+  //   value: string
+  // ) => {
+  //   setQuizQuestions(
+  //     quizQuestions.map((q) => {
+  //       if (q.id === questionId) {
+  //         return {
+  //           ...q,
+  //           answers: q.answers.map((a) =>
+  //             a.id === answerId ? { ...a, text: value } : a
+  //           ),
+  //         };
+  //       }
+  //       return q;
+  //     })
+  //   );
+  // };
+
+  // const validateForm = (): boolean => {
+  //   setValidationError("");
+
+  //   if (!selectedType) return false;
+
+  //   // Common validation
+  //   if (
+  //     (selectedType === AgendaAction.Poll ||
+  //       selectedType === AgendaAction.Q_A ||
+  //       selectedType === AgendaAction.Quiz ||
+  //       selectedType === AgendaAction.Custom) &&
+  //     !formData.title?.trim()
+  //   ) {
+  //     setValidationError(`Title is required for ${selectedType} agenda`);
+  //     return false;
+  //   }
+
+  //   // Type-specific validation
+  //   switch (selectedType) {
+  //     case AgendaAction.Poll: {
+  //       const validOptions = pollOptions.filter((opt) => opt.text.trim());
+  //       if (validOptions.length < 2) {
+  //         setValidationError("Poll requires at least 2 non-empty options");
+  //         return false;
+  //       }
+  //       break;
+  //     }
+
+  //     case AgendaAction.Quiz: {
+  //       if (quizQuestions.length === 0) {
+  //         setValidationError("Quiz requires at least 1 question");
+  //         return false;
+  //       }
+
+  //       for (let i = 0; i < quizQuestions.length; i++) {
+  //         const question = quizQuestions[i];
+  //         if (!question.questionText.trim()) {
+  //           setValidationError(`Question ${i + 1}: Question text is required`);
+  //           return false;
+  //         }
+
+  //         if (question.isMultiChoice) {
+  //           const validAnswers = question.answers.filter((a) => a.text.trim());
+  //           if (validAnswers.length < 2) {
+  //             setValidationError(
+  //               `Question ${
+  //                 i + 1
+  //               }: Multiple choice requires at least 2 non-empty options`
+  //             );
+  //             return false;
+  //           }
+  //           const correctAnswer = question.answers.find(
+  //             (a) => a.id === question.correctAnswer
+  //           );
+  //           if (!correctAnswer || !correctAnswer.text.trim()) {
+  //             setValidationError(
+  //               `Question ${i + 1}: Please select a valid correct answer`
+  //             );
+  //             return false;
+  //           }
+  //         } else {
+  //           if (!question.correctAnswer.trim()) {
+  //             setValidationError(
+  //               `Question ${i + 1}: Correct answer is required`
+  //             );
+  //             return false;
+  //           }
+  //         }
+  //       }
+  //       break;
+  //     }
+
+  //     case AgendaAction.Q_A: {
+  //       break;
+  //     }
+
+  //     case AgendaAction.Custom: {
+  //       break;
+  //     }
+  //   }
+
+  //   return true;
+  // };
 
   const handleQuizTypeChange = (questionId: string, isMultiChoice: boolean) => {
     setQuizQuestions(
@@ -233,13 +456,7 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
     if (!selectedType) return false;
 
     // Common validation
-    if (
-      (selectedType === AgendaAction.Poll ||
-        selectedType === AgendaAction.Q_A ||
-        selectedType === AgendaAction.Quiz ||
-        selectedType === AgendaAction.Custom) &&
-      !formData.title?.trim()
-    ) {
+    if (!formData.title?.trim()) {
       setValidationError(`Title is required for ${selectedType} agenda`);
       return false;
     }
@@ -299,17 +516,225 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
         break;
       }
 
-      case AgendaAction.Q_A: {
+      case AgendaAction.Q_A:
+      case AgendaAction.Custom:
+        // No additional validation needed
         break;
-      }
-
-      case AgendaAction.Custom: {
-        break;
-      }
     }
 
     return true;
   };
+
+  // const handleEdit = (agenda: AgendaItem) => {
+  //   setEditingId(agenda.id);
+  //   setSelectedType(agenda.action);
+  //   setFormData({
+  //     timeStamp: agenda.timeStamp,
+  //     title: agenda.title?.toString() || "",
+  //     description: agenda.description,
+  //     duration: agenda.duration,
+  //   });
+
+  //   switch (agenda.action) {
+  //     case AgendaAction.Poll: {
+  //       setPollOptions(
+  //         agenda.options.map((opt, idx) => ({
+  //           id: idx.toString(),
+  //           text: opt,
+  //         }))
+  //       );
+  //       break;
+  //     }
+
+  //     case AgendaAction.Quiz: {
+  //       setQuizQuestions(
+  //         agenda.questions.map((q, idx) => ({
+  //           id: idx.toString(),
+  //           questionText: q.questionText,
+  //           isMultiChoice: q.isMultiChoice,
+  //           points: q.points,
+  //           correctAnswer: q.isMultiChoice
+  //             ? q.options.findIndex((opt) => opt === q.correctAnswer).toString()
+  //             : q.correctAnswer,
+  //           answers: q.isMultiChoice
+  //             ? q.options.map((opt, ansIdx) => ({
+  //                 id: ansIdx.toString(),
+  //                 text: opt,
+  //               }))
+  //             : [],
+  //         }))
+  //       );
+  //       break;
+  //     }
+
+  //     case AgendaAction.Q_A: {
+  //       setFormData((prev) => ({ ...prev, topic: agenda.topic }));
+  //       break;
+  //     }
+
+  //     case AgendaAction.Custom: {
+  //       setFormData((prev) => ({ ...prev, customData: agenda.customData }));
+  //       break;
+  //     }
+  //   }
+  // };
+
+  // const handleDelete = (id: string) => {
+  //   setAgendaItems(agendaItems.filter((item) => item.id !== id));
+  // };
+
+  // const handleSubmit = () => {
+  //   if (!validateForm()) return;
+
+  //   const baseAgenda = {
+  //     id: editingId || Date.now().toString(),
+  //     timeStamp: formData.timeStamp || 0,
+  //     action: selectedType!,
+  //     title: formData.title?.trim(),
+  //     description: formData.description?.trim(),
+  //     duration: formData.duration,
+  //   };
+
+  //   let newAgenda: AgendaItem;
+
+  //   switch (selectedType!) {
+  //     case AgendaAction.Poll:
+  //       newAgenda = {
+  //         ...baseAgenda,
+  //         action: AgendaAction.Poll,
+  //         options: pollOptions
+  //           .filter((opt) => opt.text.trim())
+  //           .map((opt) => opt.text.trim()),
+  //       };
+  //       break;
+
+  //     case AgendaAction.Quiz:
+  //       newAgenda = {
+  //         ...baseAgenda,
+  //         action: AgendaAction.Quiz,
+  //         questions: quizQuestions.map((q) => ({
+  //           questionText: q.questionText.trim(),
+  //           options: q.isMultiChoice
+  //             ? q.answers.filter((a) => a.text.trim()).map((a) => a.text.trim())
+  //             : [],
+  //           correctAnswer: q.isMultiChoice
+  //             ? q.answers.find((a) => a.id === q.correctAnswer)?.text.trim() ||
+  //               ""
+  //             : q.correctAnswer.trim(),
+  //           isMultiChoice: q.isMultiChoice,
+  //           points: q.points,
+  //         })),
+  //       };
+  //       break;
+
+  //     case AgendaAction.Q_A:
+  //       newAgenda = {
+  //         ...baseAgenda,
+  //         action: AgendaAction.Q_A,
+  //         topic: formData.topic?.trim() || formData.title?.trim(),
+  //       };
+  //       break;
+
+  //     case AgendaAction.Custom:
+  //       newAgenda = {
+  //         ...baseAgenda,
+  //         action: AgendaAction.Custom,
+  //         customData: formData.customData || {},
+  //       };
+  //       break;
+
+  //     default:
+  //       return;
+  //   }
+
+  //   if (editingId) {
+  //     setAgendaItems(
+  //       agendaItems.map((item) => (item.id === editingId ? newAgenda : item))
+  //     );
+  //     setEditingId(null);
+  //   } else {
+  //     setAgendaItems([...agendaItems, newAgenda]);
+  //   }
+
+  //   // Reset form
+  //   setSelectedType(null);
+  //   setValidationError("");
+  //   setFormData({ timeStamp: 0, title: "", duration: undefined });
+  //   setPollOptions([
+  //     { id: "1", text: "" },
+  //     { id: "2", text: "" },
+  //   ]);
+  //   setQuizQuestions([
+  //     {
+  //       id: "1",
+  //       questionText: "",
+  //       isMultiChoice: true,
+  //       points: 10,
+  //       correctAnswer: "",
+  //       answers: [
+  //         { id: "1", text: "" },
+  //         { id: "2", text: "" },
+  //       ],
+  //     },
+  //   ]);
+  //   setShowMobileTypeSelector(false);
+  // };
+
+  // const handleSubmitAll = async () => {
+  //   console.log("Agendas submitted:", agendaItems);
+  //   if (!publicKey) {
+  //     toast.error("Please connect your wallet to create an agenda.");
+  //     return;
+  //   }
+
+  //   const agendasForAPI = agendaItems.map((item) => ({
+  //     ...item,
+  //     duration: item.duration,
+  //   }));
+
+  //   try {
+  //     const result = await createAgenda({
+  //       streamId: roomName,
+  //       wallet: publicKey?.toString(),
+  //       agendas: agendasForAPI,
+  //     });
+
+  //     if (result) {
+  //       // Success - show toast and switch to existing tab
+  //       toast.success(`Successfully created ${agendaItems.length} agenda${agendaItems.length !== 1 ? 's' : ''}!`);
+
+  //       // Clear the form
+  //       setAgendaItems([]);
+
+  //       // Trigger refresh of agendas list
+  //       if (onAgendaCreated) {
+  //         onAgendaCreated();
+  //       }
+
+  //       // Switch to existing tab to show the new agendas
+  //       if (onSwitchToExisting) {
+  //         onSwitchToExisting();
+  //       }
+  //     } else {
+  //       // Handle case where result is null but no error was thrown
+  //       toast.error("Failed to create agenda. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error creating agenda:", error);
+  //     toast.error("Failed to create agenda. Please try again.");
+  //   }
+  // };
+
+  // const handleSelectType = (type: AgendaAction) => {
+  //   setSelectedType(type);
+  //   setEditingId(null);
+  //   setValidationError("");
+  //   setShowMobileTypeSelector(false);
+  // };
+
+  // const selectedAgendaType = agendaTypes.find(
+  //   (type) => type.type === selectedType
+  // );
 
   const handleEdit = (agenda: AgendaItem) => {
     setEditingId(agenda.id);
@@ -473,6 +898,11 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
       return;
     }
 
+    if (!roomName) {
+      toast.error("No stream ID available.");
+      return;
+    }
+
     const agendasForAPI = agendaItems.map((item) => ({
       ...item,
       duration: item.duration,
@@ -481,33 +911,33 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
     try {
       const result = await createAgenda({
         streamId: roomName,
-        wallet: publicKey?.toString(),
+        wallet: publicKey.toString(),
         agendas: agendasForAPI,
       });
 
       if (result) {
-        // Success - show toast and switch to existing tab
-        toast.success(`Successfully created ${agendaItems.length} agenda${agendaItems.length !== 1 ? 's' : ''}!`);
-        
+        toast.success(
+          `Successfully created ${agendaItems.length} agenda${
+            agendaItems.length !== 1 ? "s" : ""
+          }!`
+        );
+
         // Clear the form
         setAgendaItems([]);
-        
+
         // Trigger refresh of agendas list
         if (onAgendaCreated) {
           onAgendaCreated();
         }
-        
+
         // Switch to existing tab to show the new agendas
         if (onSwitchToExisting) {
           onSwitchToExisting();
         }
-      } else {
-        // Handle case where result is null but no error was thrown
-        toast.error("Failed to create agenda. Please try again.");
       }
-    } catch (error) {
-      console.error("Error creating agenda:", error);
-      toast.error("Failed to create agenda. Please try again.");
+    } catch (err: any) {
+      console.error("Error creating agenda:", err);
+      // Error toast is handled by the useEffect watching the error state
     }
   };
 
@@ -576,13 +1006,17 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
         {validationError && (
           <div className="mb-4 sm:!mb-6 p-3 sm:!p-4 bg-red-50 border border-red-200 rounded-lg sm:!rounded-xl flex items-center gap-2 sm:!gap-3 text-red-700 animate-shake">
             <FaCircle size={8} />
-            <span className="text-sm sm:!text-base font-medium">{validationError}</span>
+            <span className="text-sm sm:!text-base font-medium">
+              {validationError}
+            </span>
           </div>
         )}
 
         <div className="space-y-4 sm:!space-y-6">
           {/* General Section */}
-          <div className={`p-4 sm:!p-6 rounded-lg sm:!rounded-xl ${selectedAgendaType?.lightColor}`}>
+          <div
+            className={`p-4 sm:!p-6 rounded-lg sm:!rounded-xl ${selectedAgendaType?.lightColor}`}
+          >
             <h3 className="text-xs sm:!text-sm font-semibold text-gray-700 mb-3 sm:!mb-4 uppercase tracking-wide">
               General Information
             </h3>
@@ -699,7 +1133,10 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                         onClick={() => handleRemovePollOption(option.id)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 sm:!p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
+                        <FaRegTrashCan
+                          size={16}
+                          className="sm:!w-[18px] sm:!h-[18px]"
+                        />
                       </button>
                     )}
                   </div>
@@ -759,7 +1196,10 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                         onClick={() => handleRemoveQuizQuestion(question.id)}
                         className="text-red-500 hover:text-red-700 p-1.5 sm:!p-2 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
+                        <FaRegTrashCan
+                          size={16}
+                          className="sm:!w-[18px] sm:!h-[18px]"
+                        />
                       </button>
                     )}
                   </div>
@@ -794,7 +1234,9 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                               }
                               className="w-3 h-3 sm:!w-4 sm:!h-4 text-purple-600"
                             />
-                            <span className="text-sm sm:!text-base font-medium">Text Answer</span>
+                            <span className="text-sm sm:!text-base font-medium">
+                              Text Answer
+                            </span>
                           </label>
                           <label className="flex items-center gap-2 sm:!gap-3 p-2 sm:!p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                             <input
@@ -805,7 +1247,9 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                               }
                               className="w-3 h-3 sm:!w-4 sm:!h-4 text-purple-600"
                             />
-                            <span className="text-sm sm:!text-base font-medium">Multiple Choice</span>
+                            <span className="text-sm sm:!text-base font-medium">
+                              Multiple Choice
+                            </span>
                           </label>
                         </div>
                       </div>
@@ -880,7 +1324,10 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                                   }
                                   className="opacity-0 group-hover:opacity-100 p-1.5 sm:!p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                 >
-                                  <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
+                                  <FaRegTrashCan
+                                    size={16}
+                                    className="sm:!w-[18px] sm:!h-[18px]"
+                                  />
                                 </button>
                               )}
                             </div>
@@ -981,9 +1428,14 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                     <>
                       <selectedAgendaType.icon
                         size={20}
-                        className={selectedAgendaType.color.replace("bg-", "text-")}
+                        className={selectedAgendaType.color.replace(
+                          "bg-",
+                          "text-"
+                        )}
                       />
-                      <span className="font-medium">{selectedAgendaType.label}</span>
+                      <span className="font-medium">
+                        {selectedAgendaType.label}
+                      </span>
                     </>
                   )}
                 </div>
@@ -1249,14 +1701,20 @@ const CreateAgenda = ({ onAgendaCreated, onSwitchToExisting }: CreateAgendaProps
                                     className="p-1.5 sm:!p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Edit"
                                   >
-                                    <FaEdit size={16} className="sm:!w-[18px] sm:!h-[18px]" />
+                                    <FaEdit
+                                      size={16}
+                                      className="sm:!w-[18px] sm:!h-[18px]"
+                                    />
                                   </button>
                                   <button
                                     onClick={() => handleDelete(item.id)}
                                     className="p-1.5 sm:!p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Delete"
                                   >
-                                    <FaRegTrashCan size={16} className="sm:!w-[18px] sm:!h-[18px]" />
+                                    <FaRegTrashCan
+                                      size={16}
+                                      className="sm:!w-[18px] sm:!h-[18px]"
+                                    />
                                   </button>
                                 </div>
                               </div>

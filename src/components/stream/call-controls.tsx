@@ -56,6 +56,9 @@ const CallControls = ({
   const { participants, count } = useParticipantList();
   const { streamMetadata } = useStreamContext();
 
+
+  const { agendas } = useStream();
+
   // Chat hook for notifications
   const { getFormattedMessages, chatMessages } = useChat({
     participants,
@@ -69,7 +72,6 @@ const CallControls = ({
   const [showYouTubeModal, setShowYouTubeModal] = useState<boolean>(false);
   const [showFeatureModal, setShowFeatureModal] = useState<boolean>(false);
 
-  const { agendas } = useStream();
 
   const handleReactionsToggle = useCallback(() => {
     setShowReactions(!showReactions);
