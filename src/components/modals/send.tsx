@@ -78,7 +78,7 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
           if (transactionSignature) {
             addNotification({
               type: "success",
-              message: "Transaction completed successfully",
+              message: `Funds sent to ${selectedUser?.userName || 'wallet'} successfully`,
               duration: 3000,
             });
             // Close modal after success

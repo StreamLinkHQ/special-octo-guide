@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useStreamContext, useParticipantControls, type SDKParticipant } from "@vidbloq/react";
-// import { GuestRequest } from "../types";
+import { useStreamContext, useParticipantControls, type SDKParticipant, useTenantContext } from "@vidbloq/react";
 
 export type GuestRequest = {
   participantId: string;
@@ -14,7 +13,8 @@ interface RequestCardProps {
 }
 
 const RequestCard = ({ request, onRemove }: RequestCardProps) => {
-  const { websocket, roomName, userType } = useStreamContext();
+  const { websocket, isConnected } = useTenantContext();
+  const { roomName, userType } = useStreamContext();
   const { participantId, name, walletAddress } = request;
   const [isRemoved, setIsRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ const RequestCard = ({ request, onRemove }: RequestCardProps) => {
       return;
     }
 
-    if (!websocket || !websocket.isConnected) {
+    if (!websocket || !isConnected) {
       setError("WebSocket not connected");
       return;
     }
@@ -140,7 +140,7 @@ const RequestCard = ({ request, onRemove }: RequestCardProps) => {
       return;
     }
 
-    if (!websocket || !websocket.isConnected) {
+    if (!websocket || !isConnected) {
       setError("WebSocket not connected");
       return;
     }
@@ -152,7 +152,7 @@ const RequestCard = ({ request, onRemove }: RequestCardProps) => {
     try {
       console.log(`Rejecting speaking request for ${participantId} in ${roomName}`);
       
-      // Use WebSocket to remove the request
+      // Use WebSocket singleton to remove the request
       websocket.returnToGuest(roomName, participantId);
       
       // Set a timeout to remove the card if WebSocket doesn't update quickly enough
