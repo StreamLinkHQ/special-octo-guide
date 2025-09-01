@@ -14,6 +14,7 @@ import Meeting from "./meeting";
 import RaisedHandCard from "./raised-hand";
 import RequestCard, { type GuestRequest } from "./request-card";
 import { ParticipantNotifications } from "./participant-notifications";
+import { PersistentCallWidget } from "../widget";
 // import ContestUI from "./contest";
 
 // Memoize child components to prevent unnecessary re-renders
@@ -174,54 +175,55 @@ const UserView = () => {
 
   return (
     <StreamProvider>
-      <MemoizedParticipantNotifications />
-      {isMeeting ? (
-        <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
-      ) : (
-        <MemoizedLivestream />
-      )}
+      <PersistentCallWidget />
+        <MemoizedParticipantNotifications />
+        {isMeeting ? (
+          <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
+        ) : (
+          <MemoizedLivestream />
+        )}
 
-      <div className="w-[90%] lg:w-[80%] mx-auto">
-        <MemoizedCallControls
-          onAgendaToggle={handleAgendaToggle}
-          showParticipantList={showParticipantList}
-          setShowParticipantList={setShowParticipantList}
-        />
-      </div>
-
-      {shouldShowGuestRequests && (
-        <div className="absolute right-10 top-20 rounded">
-          {localGuestRequests.map((request) => (
-            <RequestCard
-              request={request}
-              key={request.participantId}
-              onRemove={handleRemoveRequest}
-            />
-          ))}
+        <div className="w-[90%] lg:w-[80%] mx-auto">
+          <MemoizedCallControls
+            onAgendaToggle={handleAgendaToggle}
+            showParticipantList={showParticipantList}
+            setShowParticipantList={setShowParticipantList}
+          />
         </div>
-      )}
 
-      {shouldShowRaisedHands && (
-        <div className="absolute right-10 top-20">
-          <div className="mb-2 text-sm text-gray-600 font-medium">
-            Raised Hands ({raisedHands.length})
+        {shouldShowGuestRequests && (
+          <div className="absolute right-10 top-20 rounded">
+            {localGuestRequests.map((request) => (
+              <RequestCard
+                request={request}
+                key={request.participantId}
+                onRemove={handleRemoveRequest}
+              />
+            ))}
           </div>
-          {raisedHands.map((raisedHand) => (
-            <RaisedHandCard
-              raisedHand={raisedHand}
-              key={raisedHand.participantId}
-            />
-          ))}
-        </div>
-      )}
+        )}
 
-      {!showAgenda && (
-        <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
-      )}
+        {shouldShowRaisedHands && (
+          <div className="absolute right-10 top-20">
+            <div className="mb-2 text-sm text-gray-600 font-medium">
+              Raised Hands ({raisedHands.length})
+            </div>
+            {raisedHands.map((raisedHand) => (
+              <RaisedHandCard
+                raisedHand={raisedHand}
+                key={raisedHand.participantId}
+              />
+            ))}
+          </div>
+        )}
 
-      {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
+        {!showAgenda && (
+          <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
+        )}
 
-      {/* <MemoizedContestUI contest={contest} /> */}
+        {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
+
+        {/* <MemoizedContestUI contest={contest} /> */}
     </StreamProvider>
   );
 };
