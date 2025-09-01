@@ -6,17 +6,18 @@ import { IoSunnyOutline, IoCopyOutline } from "react-icons/io5";
 import { FaCheck, FaSave } from "react-icons/fa";
 import { FiMoon, FiSend } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { 
-  getDisplayCredentials, 
-  getGoogleCredentials, 
-  getUserPreferences, 
+import {
+  getDisplayCredentials,
+  getGoogleCredentials,
+  getUserPreferences,
   saveUserPreferences,
   saveGoogleCredentials,
-  getAvatarOptions
+  getAvatarOptions,
 } from "../utils";
 import type { UserPreferences } from "../types";
 import { useRequirePublicKey, getTokenBalance } from "@vidbloq/react";
-import {SendModal} from "../components"; 
+import { SendModal } from "../components";
+import { CustomWalletProvider } from "../components/custom-wallet-provider";
 
 const UserProfilePage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(0);
@@ -30,7 +31,7 @@ const UserProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [balance, setBalance] = useState(0);
-  
+
   const userContext = useUser();
   const wallet = useWallet({ type: "solana" });
   const { publicKey } = useRequirePublicKey();
@@ -63,7 +64,7 @@ const UserProfilePage = () => {
       saveGoogleCredentials({
         name: userContext.user.name,
         picture: userContext.user.picture,
-        email: userContext.user.email
+        email: userContext.user.email,
       });
     }
   }, [userContext.user]);
@@ -71,20 +72,33 @@ const UserProfilePage = () => {
   useEffect(() => {
     try {
       const savedPreferences = getUserPreferences();
-      
+
       if (savedPreferences) {
         setSelectedAvatar(savedPreferences.selectedAvatar || 0);
-        setUseGoogleAvatar(savedPreferences.useGoogleAvatar !== undefined ? savedPreferences.useGoogleAvatar : true);
+        setUseGoogleAvatar(
+          savedPreferences.useGoogleAvatar !== undefined
+            ? savedPreferences.useGoogleAvatar
+            : true
+        );
         setUsername(savedPreferences.username || "");
-        setUseGoogleName(savedPreferences.useGoogleName !== undefined ? savedPreferences.useGoogleName : true);
+        setUseGoogleName(
+          savedPreferences.useGoogleName !== undefined
+            ? savedPreferences.useGoogleName
+            : true
+        );
         setTheme(savedPreferences.theme || "light");
         setStatus(savedPreferences.status || "available");
       } else {
         const displayCreds = getDisplayCredentials();
-        if (displayCreds.hasCustomPreferences === false && displayCreds.name !== 'User') {
+        if (
+          displayCreds.hasCustomPreferences === false &&
+          displayCreds.name !== "User"
+        ) {
           setUseGoogleName(true);
           setUseGoogleAvatar(true);
-          console.log("No saved preferences found, using Google credentials as defaults");
+          console.log(
+            "No saved preferences found, using Google credentials as defaults"
+          );
         }
       }
     } catch (error) {
@@ -127,7 +141,7 @@ const UserProfilePage = () => {
       status,
       lastUpdated: new Date().toISOString(),
     };
-    
+
     saveUserPreferences(currentPreferences);
 
     const backendSuccess = await saveUserProfileToBackend();
@@ -151,7 +165,7 @@ const UserProfilePage = () => {
 
   const getCurrentAvatar = () => {
     const avatarOptions = getAvatarOptions();
-    
+
     if (useGoogleAvatar) {
       if (userContext.user?.picture) {
         return userContext.user.picture;
@@ -177,7 +191,7 @@ const UserProfilePage = () => {
 
   const hasGoogleCredentials = () => {
     const displayCreds = getDisplayCredentials();
-    return displayCreds.name !== 'User' || displayCreds.avatar !== null;
+    return displayCreds.name !== "User" || displayCreds.avatar !== null;
   };
 
   const getGoogleDisplayName = () => {
@@ -238,7 +252,10 @@ const UserProfilePage = () => {
                   <div className="w-full h-16 bg-gray-200 rounded animate-pulse"></div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     {[...Array(6)].map((_, i) => (
-                      <div key={i} className="w-16 h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div
+                        key={i}
+                        className="w-16 h-16 bg-gray-200 rounded-full animate-pulse"
+                      ></div>
                     ))}
                   </div>
                 </div>
@@ -251,266 +268,172 @@ const UserProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[#36008D] text-2xl lg:!text-4xl font-bold my-3 font-poppins">
-              StreamLink
-            </p>
-            {isEditing ? (
-              <button
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaSave size={16} />
-                <span>{isSaving ? "Saving..." : "Save Profile"}</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <CiEdit size={16} />
-                <span>Edit Profile</span>
-              </button>
-            )}
+    <CustomWalletProvider userWallet={wallet}>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[#36008D] text-2xl lg:!text-4xl font-bold my-3 font-poppins">
+                StreamLink
+              </p>
+              {isEditing ? (
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaSave size={16} />
+                  <span>{isSaving ? "Saving..." : "Save Profile"}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <CiEdit size={16} />
+                  <span>Edit Profile</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="text-center">
-                <div className="relative inline-block mb-4">
-                  <img
-                    src={getCurrentAvatar()}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-purple-200"
-                  />
-                  <div
-                    className={`absolute bottom-2 right-2 w-6 h-6 rounded-full border-3 border-white ${
-                      statusOptions.find((s) => s.value === status)?.color
-                    }`}
-                  ></div>
-                </div>
-
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  {getCurrentUsername()}
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  @
-                  {(getCurrentUsername() ?? "username")
-                    .toLowerCase()
-                    .replace(/\s+/g, "") || "username"}
-                </p>
-
-                <div className="flex items-center justify-center space-x-2 mb-4">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      statusOptions.find((s) => s.value === status)?.color
-                    }`}
-                  ></div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {statusOptions.find((s) => s.value === status)?.label}
-                  </span>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-gray-100">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">
-                        Wallet Address
-                      </span>
-                      <button
-                        onClick={() => copyText(wallet?.address || "")}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                        title="Copy wallet address"
-                      >
-                        <IoCopyOutline size={16} className="text-gray-600" />
-                      </button>
-                    </div>
-                    <div className="text-xs font-mono text-gray-800 break-all">
-                      {wallet?.address}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <span className="text-sm font-medium text-gray-700 block mb-1">
-                      Wallet Balance
-                    </span>
-                    <div className="flex flex-col items-center justify-between">
-                      <div className="text-lg font-bold text-purple-600">
-                        {balance.toFixed(6)} USDC
-                      </div>
-                      <button
-                        onClick={handleTransferClick}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-                      >
-                        <FiSend size={14} />
-                        <span>Transfer</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CiCamera size={20} className="mr-2 text-purple-600" />
-                Profile Picture
-              </h3>
-
-              <div className="mb-6">
-                <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={useGoogleAvatar}
-                    onChange={() => setUseGoogleAvatar(true)}
-                    className="text-purple-600"
-                    disabled={!isEditing}
-                  />
-                  <img
-                    src={getCurrentAvatar()}
-                    alt="Google"
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      Use Google Profile Picture
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {userContext.user?.picture ? "From your Google account" : "From saved Google credentials"}
-                      {!userContext.user?.picture && hasGoogleCredentials() && (
-                        <span className="text-gray-500 ml-1">(saved)</span>
-                      )}
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Or choose a custom avatar:
-                </label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {getAvatarOptions().map((avatar, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        if (isEditing) {
-                          setSelectedAvatar(index);
-                          setUseGoogleAvatar(false);
-                        }
-                      }}
-                      disabled={!isEditing}
-                      className={`relative w-16 h-16 rounded-full overflow-hidden border-2 transition-all ${
-                        selectedAvatar === index && !useGoogleAvatar
-                          ? "border-purple-500 ring-2 ring-purple-200"
-                          : "border-gray-200 hover:border-purple-300"
-                      } ${
-                        !isEditing
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <img
-                        src={avatar}
-                        alt={`Avatar ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {selectedAvatar === index && !useGoogleAvatar && (
-                        <div className="absolute inset-0 bg-purple-600 bg-opacity-20 flex items-center justify-center">
-                          <FaCheck size={16} className="text-purple-600" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CiUser size={20} className="mr-2 text-purple-600" />
-                Username
-              </h3>
-
-              <div className="mb-4">
-                <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={useGoogleName}
-                    onChange={() => setUseGoogleName(true)}
-                    className="text-purple-600"
-                    disabled={!isEditing}
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      Use Google Name
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {getGoogleDisplayName()}
-                      {!userContext.user?.name && hasGoogleCredentials() && (
-                        <span className="text-gray-500 ml-1">(saved)</span>
-                      )}
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              <div>
-                <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-                  <input
-                    type="radio"
-                    checked={!useGoogleName}
-                    onChange={() => setUseGoogleName(false)}
-                    className="text-purple-600"
-                    disabled={!isEditing}
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900 mb-2">
-                      Custom Username
-                    </div>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter your username"
-                      disabled={!isEditing || useGoogleName}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="text-center">
+                  <div className="relative inline-block mb-4">
+                    <img
+                      src={getCurrentAvatar()}
+                      alt="Profile"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-purple-200"
                     />
+                    <div
+                      className={`absolute bottom-2 right-2 w-6 h-6 rounded-full border-3 border-white ${
+                        statusOptions.find((s) => s.value === status)?.color
+                      }`}
+                    ></div>
                   </div>
-                </label>
+
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    {getCurrentUsername()}
+                  </h2>
+                  <p className="text-gray-600 mb-4">
+                    @
+                    {(getCurrentUsername() ?? "username")
+                      .toLowerCase()
+                      .replace(/\s+/g, "") || "username"}
+                  </p>
+
+                  <div className="flex items-center justify-center space-x-2 mb-4">
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        statusOptions.find((s) => s.value === status)?.color
+                      }`}
+                    ></div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {statusOptions.find((s) => s.value === status)?.label}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-gray-100">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">
+                          Wallet Address
+                        </span>
+                        <button
+                          onClick={() => copyText(wallet?.address || "")}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          title="Copy wallet address"
+                        >
+                          <IoCopyOutline size={16} className="text-gray-600" />
+                        </button>
+                      </div>
+                      <div className="text-xs font-mono text-gray-800 break-all">
+                        {wallet?.address}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-700 block mb-1">
+                        Wallet Balance
+                      </span>
+                      <div className="flex flex-col items-center justify-between">
+                        <div className="text-lg font-bold text-purple-600">
+                          {balance.toFixed(6)} USDC
+                        </div>
+                        <button
+                          onClick={handleTransferClick}
+                          className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                          <FiSend size={14} />
+                          <span>Transfer</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CiSettings size={20} className="mr-2 text-purple-600" />
-                Preferences
-              </h3>
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CiCamera size={20} className="mr-2 text-purple-600" />
+                  Profile Picture
+                </h3>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Availability Status
+                <div className="mb-6">
+                  <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={useGoogleAvatar}
+                      onChange={() => setUseGoogleAvatar(true)}
+                      className="text-purple-600"
+                      disabled={!isEditing}
+                    />
+                    <img
+                      src={getCurrentAvatar()}
+                      alt="Google"
+                      className="w-12 h-12 rounded-full"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        Use Google Profile Picture
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {userContext.user?.picture
+                          ? "From your Google account"
+                          : "From saved Google credentials"}
+                        {!userContext.user?.picture &&
+                          hasGoogleCredentials() && (
+                            <span className="text-gray-500 ml-1">(saved)</span>
+                          )}
+                      </div>
+                    </div>
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {statusOptions.map((option) => (
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Or choose a custom avatar:
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                    {getAvatarOptions().map((avatar, index) => (
                       <button
-                        key={option.value}
-                        onClick={() => isEditing && setStatus(option.value)}
+                        key={index}
+                        onClick={() => {
+                          if (isEditing) {
+                            setSelectedAvatar(index);
+                            setUseGoogleAvatar(false);
+                          }
+                        }}
                         disabled={!isEditing}
-                        className={`flex items-center space-x-3 p-3 border rounded-lg transition-all ${
-                          status === option.value
-                            ? "border-purple-500 bg-purple-50"
+                        className={`relative w-16 h-16 rounded-full overflow-hidden border-2 transition-all ${
+                          selectedAvatar === index && !useGoogleAvatar
+                            ? "border-purple-500 ring-2 ring-purple-200"
                             : "border-gray-200 hover:border-purple-300"
                         } ${
                           !isEditing
@@ -518,68 +441,167 @@ const UserProfilePage = () => {
                             : "cursor-pointer"
                         }`}
                       >
-                        <div
-                          className={`w-3 h-3 rounded-full ${option.color}`}
-                        ></div>
-                        <span className="text-sm font-medium">
-                          {option.label}
-                        </span>
+                        <img
+                          src={avatar}
+                          alt={`Avatar ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {selectedAvatar === index && !useGoogleAvatar && (
+                          <div className="absolute inset-0 bg-purple-600 bg-opacity-20 flex items-center justify-center">
+                            <FaCheck size={16} className="text-purple-600" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Theme Preference
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CiUser size={20} className="mr-2 text-purple-600" />
+                  Username
+                </h3>
+
+                <div className="mb-4">
+                  <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={useGoogleName}
+                      onChange={() => setUseGoogleName(true)}
+                      className="text-purple-600"
+                      disabled={!isEditing}
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        Use Google Name
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {getGoogleDisplayName()}
+                        {!userContext.user?.name && hasGoogleCredentials() && (
+                          <span className="text-gray-500 ml-1">(saved)</span>
+                        )}
+                      </div>
+                    </div>
                   </label>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => isEditing && setTheme("light")}
+                </div>
+
+                <div>
+                  <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                    <input
+                      type="radio"
+                      checked={!useGoogleName}
+                      onChange={() => setUseGoogleName(false)}
+                      className="text-purple-600"
                       disabled={!isEditing}
-                      className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all ${
-                        theme === "light"
-                          ? "border-purple-500 bg-purple-50 text-purple-700"
-                          : "border-gray-200 text-gray-700 hover:border-purple-300"
-                      } ${
-                        !isEditing
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <IoSunnyOutline size={16} />
-                      <span>Light</span>
-                    </button>
-                    <button
-                      onClick={() => isEditing && setTheme("dark")}
-                      disabled={!isEditing}
-                      className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all ${
-                        theme === "dark"
-                          ? "border-purple-500 bg-purple-50 text-purple-700"
-                          : "border-gray-200 text-gray-700 hover:border-purple-300"
-                      } ${
-                        !isEditing
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <FiMoon size={16} />
-                      <span>Dark</span>
-                    </button>
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 mb-2">
+                        Custom Username
+                      </div>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter your username"
+                        disabled={!isEditing || useGoogleName}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CiSettings size={20} className="mr-2 text-purple-600" />
+                  Preferences
+                </h3>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Availability Status
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {statusOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => isEditing && setStatus(option.value)}
+                          disabled={!isEditing}
+                          className={`flex items-center space-x-3 p-3 border rounded-lg transition-all ${
+                            status === option.value
+                              ? "border-purple-500 bg-purple-50"
+                              : "border-gray-200 hover:border-purple-300"
+                          } ${
+                            !isEditing
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
+                        >
+                          <div
+                            className={`w-3 h-3 rounded-full ${option.color}`}
+                          ></div>
+                          <span className="text-sm font-medium">
+                            {option.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Theme Preference
+                    </label>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => isEditing && setTheme("light")}
+                        disabled={!isEditing}
+                        className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all ${
+                          theme === "light"
+                            ? "border-purple-500 bg-purple-50 text-purple-700"
+                            : "border-gray-200 text-gray-700 hover:border-purple-300"
+                        } ${
+                          !isEditing
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <IoSunnyOutline size={16} />
+                        <span>Light</span>
+                      </button>
+                      <button
+                        onClick={() => isEditing && setTheme("dark")}
+                        disabled={!isEditing}
+                        className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all ${
+                          theme === "dark"
+                            ? "border-purple-500 bg-purple-50 text-purple-700"
+                            : "border-gray-200 text-gray-700 hover:border-purple-300"
+                        } ${
+                          !isEditing
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <FiMoon size={16} />
+                        <span>Dark</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {showTransferModal && (
-        <SendModal
-          selectedUser={mockTransferParticipant}
-          closeFunc={handleModalClose}
-        />
-      )}
-    </div>
+        {showTransferModal && (
+          <SendModal
+            selectedUser={mockTransferParticipant}
+            closeFunc={handleModalClose}
+          />
+        )}
+      </div>
+    </CustomWalletProvider>
   );
 };
 
