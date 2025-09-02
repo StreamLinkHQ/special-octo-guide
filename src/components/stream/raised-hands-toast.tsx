@@ -59,7 +59,7 @@ export const RaisedHandsToast = ({ raisedHands, onViewAll }: RaisedHandsToastPro
         >
           <span className="hidden xs:inline">View All</span>
           <span className="xs:hidden">View</span>
-          <Icon name="arrow" size={12} />
+          <Icon name="arrow" size={12} className="transform -scale-x-100" />
         </button>
       </div>
     </div>
