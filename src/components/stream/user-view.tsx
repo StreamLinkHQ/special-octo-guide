@@ -11,10 +11,11 @@ import { AddonIndicator, AgendaTabs } from "../agenda";
 import CallControls from "./call-controls";
 import Livestream from "./livestream";
 import Meeting from "./meeting";
-import RaisedHandCard from "./raised-hand";
 import RequestCard, { type GuestRequest } from "./request-card";
 import { ParticipantNotifications } from "./participant-notifications";
 import { PersistentCallWidget } from "../widget";
+import { RaisedHandsToast } from "./raised-hands-toast";
+import { RaisedHandsSidebar } from "./raised-hands-sidebar";
 // import ContestUI from "./contest";
 
 // Memoize child components to prevent unnecessary re-renders
@@ -37,26 +38,11 @@ const UserView = () => {
     []
   );
   const [showAgenda, setShowAgenda] = useState<boolean>(false);
-  const [showParticipantList, setShowParticipantList] =
+  const [showRaisedHandsSidebar, setShowRaisedHandsSidebar] =
     useState<boolean>(false);
 
-  // const { participants } = useParticipantList();
-
-  // const contest = useContest({
-  //   config: {
-  //     mode: "pitch",
-  //     turnBased: {
-  //       enabled: true,
-  //       turnDuration: 60,
-  //       votingAfterEachTurn: true,
-  //     },
-  //     features: {
-  //       timer: true,
-  //       voting: true,
-  //       leaderboard: true,
-  //     },
-  //   },
-  // });
+  const [showParticipantList, setShowParticipantList] =
+    useState<boolean>(false);
 
   // Simplified tracking - no need for extensive refs
   const processedRequestIds = useRef(new Set<string>());
@@ -176,54 +162,55 @@ const UserView = () => {
   return (
     <StreamProvider>
       <PersistentCallWidget />
-        <MemoizedParticipantNotifications />
-        {isMeeting ? (
-          <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
-        ) : (
-          <MemoizedLivestream />
-        )}
+      <MemoizedParticipantNotifications />
+      {isMeeting ? (
+        <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
+      ) : (
+        <MemoizedLivestream />
+      )}
 
-        <div className="w-[90%] lg:w-[80%] mx-auto">
-          <MemoizedCallControls
-            onAgendaToggle={handleAgendaToggle}
-            showParticipantList={showParticipantList}
-            setShowParticipantList={setShowParticipantList}
-          />
+      <div className="w-[90%] lg:w-[80%] mx-auto">
+        <MemoizedCallControls
+          onAgendaToggle={handleAgendaToggle}
+          showParticipantList={showParticipantList}
+          setShowParticipantList={setShowParticipantList}
+        />
+      </div>
+
+      {shouldShowGuestRequests && (
+        <div className="absolute right-10 top-20 rounded">
+          {localGuestRequests.map((request) => (
+            <RequestCard
+              request={request}
+              key={request.participantId}
+              onRemove={handleRemoveRequest}
+            />
+          ))}
         </div>
+      )}
 
-        {shouldShowGuestRequests && (
-          <div className="absolute right-10 top-20 rounded">
-            {localGuestRequests.map((request) => (
-              <RequestCard
-                request={request}
-                key={request.participantId}
-                onRemove={handleRemoveRequest}
-              />
-            ))}
-          </div>
-        )}
+      {shouldShowRaisedHands && (
+        <>
+          <RaisedHandsToast
+            raisedHands={raisedHands}
+            onViewAll={() => setShowRaisedHandsSidebar(true)}
+          />
 
-        {shouldShowRaisedHands && (
-          <div className="absolute right-10 top-20">
-            <div className="mb-2 text-sm text-gray-600 font-medium">
-              Raised Hands ({raisedHands.length})
-            </div>
-            {raisedHands.map((raisedHand) => (
-              <RaisedHandCard
-                raisedHand={raisedHand}
-                key={raisedHand.participantId}
-              />
-            ))}
-          </div>
-        )}
+          <RaisedHandsSidebar
+            raisedHands={raisedHands}
+            isOpen={showRaisedHandsSidebar}
+            onClose={() => setShowRaisedHandsSidebar(false)}
+          />
+        </>
+      )}
 
-        {!showAgenda && (
-          <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
-        )}
+      {!showAgenda && (
+        <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
+      )}
 
-        {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
+      {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
 
-        {/* <MemoizedContestUI contest={contest} /> */}
+      {/* <MemoizedContestUI contest={contest} /> */}
     </StreamProvider>
   );
 };
