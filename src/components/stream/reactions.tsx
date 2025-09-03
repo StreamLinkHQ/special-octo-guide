@@ -207,7 +207,7 @@ const Reactions = ({ showReactions, localParticipant }: ReactionProps) => {
 
       {/* Reaction panel - responsive */}
       {showReactions && (
-        <div className="fixed bottom-16 sm:bottom-20 lg:bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="fixed bottom-16 sm:bottom-20 lg:bottom-24 left-1/2 transform -translate-x-1/2 z-50">
           <div className="bg-gray-800 bg-opacity-90 rounded-full p-1.5 sm:p-2 shadow-lg">
             {/* Mobile view - two rows */}
             <div className="flex overflow-x-auto justify-center gap-1 sm:!gap-2 lg:flex-nowrap max-w-[280px] sm:!max-w-none">
