@@ -7,9 +7,11 @@ const JoinStreamView = () => {
   return (
     <>
       {token ? (
-        <StreamView>
-          <UserView />
-        </StreamView>
+        <div className="h-screen">
+          <StreamView>
+            <UserView />
+          </StreamView>
+        </div>
       ) : (
         <Prejoin />
       )}

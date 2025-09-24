@@ -781,7 +781,7 @@ const PollResults: React.FC<PollResultsProps> = ({
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent mb-3">
+              <h1 className="text-4xl font-bold bg-clip-text text-gray-800 mb-3">
                 {results.title || "Poll Results"}
               </h1>
               <div className="flex flex-wrap gap-6 text-sm text-gray-600">

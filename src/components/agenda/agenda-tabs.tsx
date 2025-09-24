@@ -51,44 +51,6 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
   // Check if there are existing agendas
   const hasExistingAgendas = agendas && agendas.length > 0;
 
-  // // Force sync addon state when modal opens - only once on mount
-  // useEffect(() => {
-  //   console.log("AgendaTabs mounted, syncing addon state");
-  //   syncAddonState();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []); // Empty dependency array - only run on mount
-
-  // // Memoized handlers to prevent recreation
-  // const handleAgendaCreated = useCallback(() => {
-  //   refetchAgendas();
-  // }, [refetchAgendas]);
-
-  // const handleSwitchToExisting = useCallback(() => {
-  //   setActiveTab("existing");
-  // }, []);
-
-  // // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // const handleViewResponses = useCallback((agenda: any) => {
-  //   setViewingResponsesForAgenda(agenda);
-  // }, [setViewingResponsesForAgenda]);
-
-  // const handleCloseResponseViewer = useCallback(() => {
-  //   setViewingResponsesForAgenda(null);
-  // }, [setViewingResponsesForAgenda]);
-
-  // const handleEdit = useCallback((agenda: Agenda) => {
-  //   setEditingAgenda(agenda);
-  // }, []);
-
-  // const handleDelete = useCallback(async () => {
-  //   refetchAgendas();
-  // }, [refetchAgendas]);
-
-  // const handleEditSuccess = useCallback(() => {
-  //   refetchAgendas();
-  //   setEditingAgenda(null);
-  // }, [refetchAgendas]);
-
   // Force sync addon state when modal opens
   useEffect(() => {
     console.log("AgendaTabs mounted, syncing addon state");
@@ -126,97 +88,11 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     setEditingAgenda(null);
   }, [refetchAgendas]);
 
-  // const handleTabChange = useCallback((tabId: string) => {
-  //   setActiveTab(tabId);
-  //   setIsMobileMenuOpen(false);
-  // }, []);
 
     const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId);
     setIsMobileMenuOpen(false);
   }, []);
-
-  // Auto-redirect users when addon stops while they're on participate tab
-  // useEffect(() => {
-  //   if (activeTab === "participate" && !shouldShowParticipationTab) {
-  //     console.log(
-  //       "Addon stopped while user was on participate tab, redirecting..."
-  //     );
-  //     setActiveTab("existing");
-  //   }
-  // }, [activeTab, shouldShowParticipationTab]);
-
-  // // Refresh agendas when tab changes to ensure sync
-  // useEffect(() => {
-  //   if (activeTab === "existing") {
-  //     refetchAgendas();
-  //   }
-  // }, [activeTab, refetchAgendas]);
-
-  // // Set default active tab based on user role and available content
-  // useEffect(() => {
-  //   if (!activeTab) {
-  //     if (isHost) {
-  //       if (hasExistingAgendas) {
-  //         setActiveTab("existing");
-  //       } else {
-  //         setActiveTab("create");
-  //       }
-  //     } else {
-  //       if (shouldShowParticipationTab) {
-  //         setActiveTab("participate");
-  //       } else if (hasExistingAgendas) {
-  //         setActiveTab("existing");
-  //       } else {
-  //         setActiveTab("existing");
-  //       }
-  //     }
-  //   }
-  // }, [activeTab, shouldShowParticipationTab, isHost, hasExistingAgendas]);
-
-  // // Memoize available tabs to prevent recreation on every render
-  // const availableTabs = useMemo(() => {
-  //   const tabs = [];
-
-  //   if (isHost) {
-  //     tabs.push({
-  //       id: "create",
-  //       label: "Create Agenda",
-  //       icon: <FaPlus className="w-3 h-3 sm:!w-4 sm:!h-4" />,
-  //     });
-  //   }
-
-  //   if (hasExistingAgendas) {
-  //     tabs.push({
-  //       id: "existing",
-  //       label: "Existing Agendas",
-  //       icon: <FaList className="w-3 h-3 sm:!w-4 sm:!h-4" />,
-  //     });
-  //   }
-
-  //   if (shouldShowParticipationTab && !isHost) {
-  //     let iconComponent = <FaQuestionCircle className="w-3 h-3 sm:!w-4 sm:!h-4" />;
-
-  //     if (activeAddonType === "Poll") {
-  //       iconComponent = <FaVoteYea className="w-3 h-3 sm:!w-4 sm:!h-4" />;
-  //     } else if (activeAddonType === "Quiz") {
-  //       iconComponent = <FaBrain className="w-3 h-3 sm:!w-4 sm:!h-4" />;
-  //     }
-
-  //     tabs.push({
-  //       id: "participate",
-  //       label: participationTabLabel,
-  //       icon: iconComponent,
-  //     });
-  //   }
-
-  //   return tabs;
-  // }, [isHost, hasExistingAgendas, shouldShowParticipationTab, activeAddonType, participationTabLabel]);
-
-  // const currentTab = useMemo(() => 
-  //   availableTabs.find(tab => tab.id === activeTab),
-  //   [availableTabs, activeTab]
-  // );
 
 // Auto-redirect users when addon stops while they're on participate tab
   useEffect(() => {
@@ -290,115 +166,6 @@ const AgendaTabs = ({ closeFunc }: AgendaTabsProps) => {
     availableTabs.find(tab => tab.id === activeTab),
     [availableTabs, activeTab]
   );
-
-  // Memoize the tab content rendering
-  // const tabContent = useMemo(() => {
-  //   switch (activeTab) {
-  //     case "create":
-  //       return (
-  //         <CreateAgenda 
-  //           onAgendaCreated={handleAgendaCreated}
-  //           onSwitchToExisting={handleSwitchToExisting}
-  //         />
-  //       );
-
-  //     case "existing":
-  //       return (
-  //         <div className="bg-white rounded-lg h-full p-4 sm:!p-6">
-  //           <div className="flex justify-between items-center mb-4 sm:!mb-6">
-  //             <h2 className="text-lg sm:!text-xl font-semibold text-gray-800">
-  //               Stream Agendas
-  //             </h2>
-  //             <span className="text-gray-400 text-xs sm:!text-sm">
-  //               {agendas?.length || 0} agenda
-  //               {(agendas?.length || 0) !== 1 ? "s" : ""}
-  //             </span>
-  //           </div>
-
-  //           {hasExistingAgendas ? (
-  //             <div className="space-y-3 sm:!space-y-4 max-h-[60vh] sm:!max-h-96 overflow-y-auto">
-  //               <div className="relative">
-  //                 <div className="absolute top-0 bottom-0 left-1.5 border-l border-dashed border-gray-200 z-0"></div>
-  //                 {agendas?.map((item) => (
-  //                   <div key={item.id} className="relative mb-3 sm:!mb-4">
-  //                     <AgendaItem
-  //                       item={item}
-  //                       onViewResponses={handleViewResponses}
-  //                       onEdit={handleEdit}
-  //                       onDelete={handleDelete}
-  //                       onRefresh={refetchAgendas}
-  //                     />
-  //                   </div>
-  //                 ))}
-  //               </div>
-  //             </div>
-  //           ) : (
-  //             <div className="text-center py-8">
-  //               <FaList className="w-10 h-10 sm:!w-12 sm:!h-12 text-gray-300 mx-auto mb-4" />
-  //               <p className="text-sm sm:!text-base text-gray-500">No agendas created yet</p>
-  //               {isHost && (
-  //                 <button
-  //                   onClick={() => setActiveTab("create")}
-  //                   className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:!text-base"
-  //                 >
-  //                   Create First Agenda
-  //                 </button>
-  //               )}
-  //             </div>
-  //           )}
-
-  //           <div className="mt-4 sm:!mt-6 text-xs text-gray-500 text-center">
-  //             {isHost
-  //               ? "Click the menu on each agenda to start, edit, or delete it. Starting a new addon will automatically stop any currently active addon."
-  //               : "The host can start agendas for everyone to participate."}
-  //           </div>
-  //         </div>
-  //       );
-
-  //     case "participate":
-  //       if (activeAddonType === "Poll") {
-  //         return <PollTaker />;
-  //       } else if (activeAddonType === "Quiz") {
-  //         return <QuizTaker />;
-  //       } else if (activeAddonType === "Q&A") {
-  //         return (
-  //           <div className="bg-white rounded-lg h-full p-4 sm:!p-6">
-  //             <div className="text-center">
-  //               <FaQuestionCircle className="w-12 h-12 sm:w-16 sm:h-16 text-blue-500 mx-auto mb-4" />
-  //               <h2 className="text-lg sm:!text-xl font-semibold text-gray-800 mb-4">
-  //                 Q&A Session Active
-  //               </h2>
-  //               <p className="text-sm sm:!text-base text-gray-600 mb-6">
-  //                 The Q&A participation component is coming soon!
-  //               </p>
-  //               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:!p-4">
-  //                 <p className="text-blue-800 text-xs sm:!text-sm">
-  //                   This feature is currently under development. You'll be able
-  //                   to ask questions and participate in discussions here.
-  //                 </p>
-  //               </div>
-  //             </div>
-  //           </div>
-  //         );
-  //       }
-  //       return null;
-
-  //     default:
-  //       return null;
-  //   }
-  // }, [
-  //   activeTab,
-  //   activeAddonType,
-  //   agendas,
-  //   hasExistingAgendas,
-  //   isHost,
-  //   handleAgendaCreated,
-  //   handleSwitchToExisting,
-  //   handleViewResponses,
-  //   handleEdit,
-  //   handleDelete,
-  //   refetchAgendas,
-  // ]);
 
   const tabContent = useMemo(() => {
     switch (activeTab) {

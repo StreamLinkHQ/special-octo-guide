@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import {
-  useStreamContext,
-  useTenantContext,
-  // useContest,
-  // useParticipantList,
-} from "@vidbloq/react";
-import { StreamProvider } from "../../context";
+import { useStreamContext, useTenantContext } from "@vidbloq/react";
+import { ContestConfigProvider, StreamProvider } from "../../context";
 import { AddonIndicator, AgendaTabs } from "../agenda";
 import CallControls from "./call-controls";
+
 import Livestream from "./livestream";
 import Meeting from "./meeting";
 import RequestCard, { type GuestRequest } from "./request-card";
@@ -16,7 +12,11 @@ import { ParticipantNotifications } from "./participant-notifications";
 import { PersistentCallWidget } from "../widget";
 import { RaisedHandsToast } from "./raised-hands-toast";
 import { RaisedHandsSidebar } from "./raised-hands-sidebar";
-// import ContestUI from "./contest";
+import {
+  ContestConfigTrigger,
+  ContestConfigPanel,
+  ContestWrapper,
+} from "../contest";
 
 // Memoize child components to prevent unnecessary re-renders
 const MemoizedMeeting = memo(Meeting);
@@ -27,6 +27,8 @@ const MemoizedAgendaTabs = memo(AgendaTabs);
 const MemoizedParticipantNotifications = memo(ParticipantNotifications);
 // const MemoizedContest = memo(Contest);
 // const MemoizedContestUI = memo(ContestUI);
+const MemoizedContestWrapper = memo(ContestWrapper);
+const MemoizedContestConfigPanel = memo(ContestConfigPanel);
 
 const UserView = () => {
   const { streamMetadata, guestRequests, userType, roomName, raisedHands } =
@@ -211,6 +213,17 @@ const UserView = () => {
       {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
 
       {/* <MemoizedContestUI contest={contest} /> */}
+      <ContestConfigProvider>
+        {userType === "host" && (
+          <div className="">
+            <ContestConfigTrigger />
+          </div>
+        )}
+
+        {/* The panel itself (hidden until triggered) */}
+        <MemoizedContestConfigPanel />
+        <MemoizedContestWrapper />
+      </ContestConfigProvider>
     </StreamProvider>
   );
 };
@@ -386,3 +399,20 @@ export default memo(UserView);
 // };
 
 // export default UserView;
+
+// const [contestMode, setContestMode] = useState('elimination');
+
+// const config = {
+//     mode: contestMode,
+//     name: 'Community Showcase',
+//     features: {
+//       voting: true,
+//       elimination: contestMode === 'elimination',
+//       leaderboard: true,
+//       timer: true,
+//     },
+//     scoring: {
+//       type: 'average',
+//       scoreRange: { min: 1, max: 10 },
+//     },
+//   };
