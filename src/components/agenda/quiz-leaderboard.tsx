@@ -833,7 +833,7 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent mb-2 sm:mb-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-clip-text text-bg-primary mb-2 sm:mb-3">
                 {results.title || "Quiz Results"}
               </h1>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600">

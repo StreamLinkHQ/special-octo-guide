@@ -1013,7 +1013,7 @@ const QuizTaker = () => {
         <div className="max-w-2xl mx-auto relative">
           <div className="bg-white rounded-3xl shadow-xl border border-purple-100 p-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl font-bold bg-clip-text text-bg-primary mb-4">
                 {quiz?.title || "Quiz"}
               </h1>
               {quiz?.description && (
@@ -1036,7 +1036,7 @@ const QuizTaker = () => {
               
               <button
                 onClick={startQuiz}
-                className="bg-gradient-to-r from-purple-500 to-purple-700 text-white font-semibold py-4 px-12 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                className="bg-purple-500 text-white font-semibold py-4 px-12 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
               >
                 Start Quiz
               </button>
