@@ -1233,7 +1233,6 @@ export function TurnBased() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [showSelection, setShowSelection] = useState(false);
   const [selectedContestants, setSelectedContestants] = useState<Set<string>>(new Set());
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [eventLog, setEventLog] = useState<string[]>([]);
   const [contestStarted, setContestStarted] = useState(false);
   const [votingPhase, setVotingPhase] = useState(false);
@@ -1259,6 +1258,7 @@ export function TurnBased() {
     contestStarted: false,
     currentPerformerId: null as string | null
   });
+  console.log(eventLog)
 
   // Keep contestStateRef synced with actual state
   useEffect(() => {

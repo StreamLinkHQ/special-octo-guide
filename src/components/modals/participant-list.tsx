@@ -247,7 +247,6 @@ const ParticipantListModal = ({
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   // Add state for filter
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filter, setFilter] = useState<"all" | "pinned">("all");
 
   // Add state for Send Modal
@@ -321,6 +320,7 @@ const ParticipantListModal = ({
                 Viewers
               </p>
             </div>
+            <button onClick={() => setFilter("all")} className="hidden">filter</button>
             <div className="flex items-center gap-x-2">
               {userType === "host" && (
                 <div
