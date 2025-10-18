@@ -1,19 +1,30 @@
 import { useEffect, useState } from "react";
-import { type Participant, useNotification, useTransaction, useRequirePublicKey, getTokenBalance } from "@vidbloq/react";
+import {
+  type Participant,
+  useNotification,
+  useTransaction,
+  useBalance,
+} from "@vidbloq/react";
+import { Spinner } from "../ui";
 
 type SendModalProps = {
   selectedUser: Participant | null;
   closeFunc: (val: boolean) => void;
+  streamId?: string;
 };
 
-const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
-  const [amount, setAmount] = useState<string>('');
-  const [recipientAddress, setRecipientAddress] = useState<string>('');
+const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
+  const [amount, setAmount] = useState<string>("");
+  const [recipientAddress, setRecipientAddress] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [isTransactionFetched, setIsTransactionFetched] = useState<boolean>(false);
-  const [balance, setBalance] = useState<number>(0);
-  const [error, setError] = useState<string>('');
-  const { publicKey } = useRequirePublicKey();
+  const [isTransactionFetched, setIsTransactionFetched] =
+    useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const {
+    usdcBalance: balance,
+    refresh: refreshBalance,
+    loading: balanceLoading,
+  } = useBalance();
 
   const NETWORK_FEE = 0.01;
 
@@ -22,40 +33,30 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
 
   // Format wallet address
   const formatAddress = (address: string) => {
-    if (!address) return '';
+    if (!address) return "";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // console.log({ balance });
-
-  const getUsdcBalance = async () => {
-    if (!publicKey) {
-      return;
-    }
-    const balance = await getTokenBalance(publicKey.toString());
-    setBalance(balance.onChainBalance.usdc);
-  };
-
   useEffect(() => {
-    getUsdcBalance();
-    // Set initial recipient address if provided
     if (selectedUser?.walletAddress) {
       setRecipientAddress(selectedUser.walletAddress);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
   // Use recipientAddress state for general transfers, selectedUser.walletAddress for specific user transfers
-  const finalRecipientAddress = isGeneralTransfer ? recipientAddress : selectedUser?.walletAddress || '';
+  const finalRecipientAddress = isGeneralTransfer
+    ? recipientAddress
+    : selectedUser?.walletAddress || "";
 
-  const recipients = finalRecipientAddress && amount
-    ? [
-        {
-          publicKey: finalRecipientAddress,
-          amount: Number(amount),
-        },
-      ]
-    : [];
+  const recipients =
+    finalRecipientAddress && amount
+      ? [
+          {
+            publicKey: finalRecipientAddress,
+            amount: Number(amount),
+          },
+        ]
+      : [];
 
   const { addNotification } = useNotification();
   const {
@@ -67,6 +68,10 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
     loading: transactionLoading,
   } = useTransaction({
     recipients,
+    streamId,
+    deliveryOptions: {
+      priority: "standard",
+    },
   });
 
   useEffect(() => {
@@ -76,9 +81,12 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
           await signAndSubmitTransaction();
           // Only handle success here - errors are handled in the catch block
           if (transactionSignature) {
+            await refreshBalance();
             addNotification({
               type: "success",
-              message: `Funds sent to ${selectedUser?.userName || 'wallet'} successfully`,
+              message: `Funds sent to ${
+                selectedUser?.userName || "wallet"
+              } successfully`,
               duration: 3000,
             });
             // Close modal after success
@@ -111,14 +119,14 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
   const validateAmount = (value: string) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue <= 0) {
-      setError('');
+      setError("");
       return false;
     }
     if (numValue > balance) {
-      setError('Insufficient balance');
+      setError("Insufficient balance");
       return false;
     }
-    setError('');
+    setError("");
     return true;
   };
 
@@ -126,10 +134,10 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Allow empty string, numbers, and decimal points
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setAmount(value);
       if (value) validateAmount(value);
-      else setError('');
+      else setError("");
     }
   };
 
@@ -195,11 +203,36 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
 
   // Get button state
   const getButtonState = () => {
-    if (transactionSignature) return { text: 'Sent! ✓', disabled: true, className: 'bg-green-500' };
-    if (loading || transactionLoading) return { text: 'Sending...', disabled: true, className: 'bg-gradient-to-r from-purple-600 to-purple-700 opacity-75' };
-    if (!amount || parseFloat(amount) <= 0 || !finalRecipientAddress) return { text: 'Send', disabled: true, className: 'bg-gradient-to-r from-purple-600 to-purple-700 opacity-50' };
-    if (error || transactionError) return { text: error || transactionError || 'Error', disabled: true, className: 'bg-red-500 opacity-90' };
-    return { text: `Send ${parseFloat(amount).toFixed(6)} USDC`, disabled: false, className: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' };
+    if (transactionSignature)
+      return {
+        text: "Sent! ✓",
+        disabled: true,
+        className: "bg-green-500 text-white",
+      };
+    if (loading || transactionLoading)
+      return {
+        text: "Sending...",
+        disabled: true,
+        className: "bg-primary text-white opacity-75",
+      };
+    if (!amount || parseFloat(amount) <= 0 || !finalRecipientAddress)
+      return {
+        text: "Send",
+        disabled: true,
+        className: "bg-primary text-white opacity-50 cursor-not-allowed",
+      };
+    if (error || transactionError)
+      return {
+        text: error || transactionError || "Error",
+        disabled: true,
+        className: "bg-red-500 text-white opacity-90",
+      };
+    return {
+      text: `Send ${parseFloat(amount).toFixed(6)} USDC`,
+      disabled: false,
+      className:
+        "bg-primary text-white hover:bg-purple-800 active:bg-purple-900 focus:ring-2 focus:ring-purple-500",
+    };
   };
 
   const buttonState = getButtonState();
@@ -211,24 +244,29 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => closeFunc(true)}
       />
-      
+
       {/* Modal */}
       <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-gray-800">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 relative">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isGeneralTransfer ? 'Transfer Funds' : 'Send to User'}
+            {isGeneralTransfer ? "Transfer Funds" : "Send to User"}
           </h2>
           <button
             onClick={() => closeFunc(true)}
             className="w-9 h-9 right-0 absolute rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-gray-800 hover:text-black transition-all duration-200 hover:rotate-90"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path
+                d="M15 5L5 15M5 5L15 15"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -236,7 +274,9 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
         {/* Recipient */}
         {isGeneralTransfer ? (
           <div className="mb-6">
-            <p className="text-sm text-black mb-3 font-medium">RECIPIENT ADDRESS</p>
+            <p className="text-sm text-black mb-3 font-medium">
+              RECIPIENT ADDRESS
+            </p>
             <input
               type="text"
               value={recipientAddress}
@@ -251,8 +291,8 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
             <div className="bg-black/5 border border-black/10 rounded-2xl p-4 flex items-center gap-4 hover:bg-black/[0.07] hover:border-purple-500/30 transition-all duration-200">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
                 {selectedUser?.avatarUrl ? (
-                  <img 
-                    src={selectedUser.avatarUrl} 
+                  <img
+                    src={selectedUser.avatarUrl}
                     alt={selectedUser.userName}
                     className="w-full h-full rounded-full object-cover"
                   />
@@ -263,8 +303,12 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-black font-medium">{selectedUser.userName}</p>
-                <p className="text-gray-400 text-sm font-mono">{formatAddress(selectedUser.walletAddress)}</p>
+                <p className="text-black font-medium">
+                  {selectedUser.userName}
+                </p>
+                <p className="text-gray-400 text-sm font-mono">
+                  {formatAddress(selectedUser.walletAddress)}
+                </p>
               </div>
             </div>
           </div>
@@ -274,9 +318,16 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-black font-medium">AMOUNT</p>
-            <p className="text-xs text-black">Balance: {balance.toFixed(6)} USDC</p>
+
+            {balanceLoading ? (
+              <Spinner />
+            ) : (
+              <p className="text-xs text-black">
+                Balance: {balance.toFixed(6)} USDC
+              </p>
+            )}
           </div>
-          
+
           <div className="relative mb-4">
             <input
               type="text"
@@ -305,7 +356,6 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
               </button>
             ))}
           </div>
-
         </div>
 
         {/* Send Button */}
@@ -317,17 +367,32 @@ const SendModal = ({ selectedUser, closeFunc }: SendModalProps) => {
           {buttonState.text}
         </button>
 
-        {/* Transaction Signature Link */}
         {transactionSignature && (
-          <div className="text-sm text-wrap w-full mt-4">
-            <p className="text-gray-400 mb-2">Transaction Signature:</p>
+          <div className="w-full mt-4">
+            <p className="text-sm text-gray-500 mb-2 font-medium">
+              Transaction Signature
+            </p>
             <a
-              href={`https://explorer.solana.com/tx/${transactionSignature}?cluster=mainnet`}
+              href={`https://solscan.io/tx/${transactionSignature}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-400 hover:text-purple-300 break-all transition-colors duration-200"
+              className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono text-purple-600 hover:text-purple-700 hover:border-purple-300 transition-all duration-200"
             >
-              {transactionSignature}
+              <span className="truncate">{transactionSignature}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                className="w-4 h-4 ml-2 flex-shrink-0"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 6H19.5V12M19.5 6L10.5 15L4.5 9"
+                />
+              </svg>
             </a>
           </div>
         )}

@@ -10,7 +10,7 @@ import {
   useTransaction,
   useNotification,
   useRequirePublicKey,
-  getTokenBalance,
+  useBalance,
 } from "@vidbloq/react";
 
 // Types based on your hook interfaces
@@ -47,20 +47,8 @@ const RewardModal: React.FC<{
 }> = ({ isOpen, onClose, winners, onConfirm }) => {
   const [rewardAmount, setRewardAmount] = useState<string>("");
   const [isPerPerson, setIsPerPerson] = useState<boolean>(true);
-  const [balance, setBalance] = useState<number>(0);
-  const { publicKey } = useRequirePublicKey();
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (publicKey) {
-        const balanceData = await getTokenBalance(publicKey.toString());
-        setBalance(balanceData.onChainBalance.usdc);
-      }
-    };
-    if (isOpen) {
-      fetchBalance();
-    }
-  }, [isOpen, publicKey]);
+  const { usdcBalance: balance } = useBalance(30000);
 
   const totalAmount = isPerPerson
     ? parseFloat(rewardAmount || "0") * winners.length
@@ -270,24 +258,7 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
   const { addNotification } = useNotification();
   const { publicKey } = useRequirePublicKey();
 
-  // // Use the stream context properly with useStream hook
-  // const {
-  //   getResponseData,
-  //   isResponseDataLoading,
-  //   preloadResponseData,
-  //   clearResponseCache
-  // } = useStream();
-
-  // // Check for cached data
-  // const cachedData = agendaId ? getResponseData(agendaId, 'quiz') : null;
-  // const isCacheLoading = agendaId ? isResponseDataLoading(agendaId) : false;
-
-  // // Use cached data if available, otherwise use hook results
-  // const results = cachedData || hookResults;
-  // const isLoading = isCacheLoading || (isLoadingFromHook && !cachedData);
-
-  // // Track if we've fetched for this agenda
-  // const [hasFetched, setHasFetched] = useState(false);
+  const { refresh: refreshBalance } = useBalance(30000);
 
   // Transaction hook for rewards
   const [rewardRecipients, setRewardRecipients] = useState<
@@ -303,39 +274,6 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
   } = useTransaction({
     recipients: rewardRecipients,
   });
-
-  // Handle transaction signing
-  // useEffect(() => {
-  //   const handleTransactionSign = async () => {
-  //     if (transactionBase64 && transactionFetched) {
-  //       try {
-  //         await signAndSubmitTransaction();
-  //         if (transactionSignature) {
-  //           addNotification({
-  //             type: "success",
-  //             message: `Successfully rewarded ${selectedWinners.length} winner${selectedWinners.length > 1 ? 's' : ''}!`,
-  //             duration: 5000,
-  //           });
-  //           setShowRewardModal(false);
-  //           setSelectedWinners([]);
-  //           setRewardRecipients([]);
-  //         }
-  //       } catch (error) {
-  //         console.error("Error in signing transaction:", error);
-  //         addNotification({
-  //           type: "error",
-  //           message: error instanceof Error ? error.message : "Failed to send rewards",
-  //           duration: 3000,
-  //         });
-  //       } finally {
-  //         setTransactionFetched(false);
-  //         setIsProcessingRewards(false);
-  //       }
-  //     }
-  //   };
-
-  //   handleTransactionSign();
-  // }, [transactionBase64, transactionFetched, transactionSignature, selectedWinners.length, addNotification, signAndSubmitTransaction]);
 
   // Fetch initial data for static mode
   useEffect(() => {
@@ -369,6 +307,7 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
         try {
           await signAndSubmitTransaction();
           if (transactionSignature) {
+            await refreshBalance();
             addNotification({
               type: "success",
               message: `Successfully rewarded ${selectedWinners.length} winner${
@@ -396,6 +335,7 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
     };
 
     handleTransactionSign();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     transactionBase64,
     transactionFetched,
@@ -416,74 +356,6 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
       setIsProcessingRewards(false);
     }
   }, [transactionError, addNotification]);
-
-  // const fetchQuizResults = async () => {
-  //   if (!agendaId) {
-  //     console.log("No agendaId provided, skipping fetch");
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Fetching fresh quiz results for agenda:', agendaId);
-  //     await getQuizResults(agendaId);
-
-  //     // After fetching, update the cache if no cached data exists
-  //     if (!cachedData) {
-  //       preloadResponseData(agendaId, 'quiz');
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching quiz data:", error);
-  //   }
-  // };
-
-  // const handleRefresh = async () => {
-  //   if (!agendaId) return;
-  //   clearResponseCache(agendaId);
-  //   setHasFetched(false);
-  //   await fetchQuizResults();
-  // };
-
-  // const handleRewardClick = (count: 1 | 5 | 10) => {
-  //   if (!results || !publicKey) {
-  //     addNotification({
-  //       type: "error",
-  //       message: "Please connect your wallet first",
-  //       duration: 3000,
-  //     });
-  //     return;
-  //   }
-
-  //   const winners = results.leaderboard.slice(0, count);
-  //   setSelectedWinners(winners);
-  //   setShowRewardModal(true);
-  // };
-
-  // const handleConfirmReward = async (amount: number, isPerPerson: boolean) => {
-  //   if (!selectedWinners.length || amount <= 0) return;
-
-  //   const amountPerPerson = isPerPerson ? amount : amount / selectedWinners.length;
-
-  //   const recipients = selectedWinners.map(winner => ({
-  //     publicKey: winner.walletAddress,
-  //     amount: amountPerPerson,
-  //   }));
-
-  //   setRewardRecipients(recipients);
-  //   setIsProcessingRewards(true);
-
-  //   try {
-  //     await fetchTransaction();
-  //     setTransactionFetched(true);
-  //   } catch (error) {
-  //     console.error("Error fetching transaction:", error);
-  //     addNotification({
-  //       type: "error",
-  //       message: "Failed to prepare reward transaction",
-  //       duration: 3000,
-  //     });
-  //     setIsProcessingRewards(false);
-  //   }
-  // };
 
   const handleRefresh = useCallback(async () => {
     if (!agendaId) return;
@@ -538,88 +410,6 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
       setIsProcessingRewards(false);
     }
   };
-
-  // const getRankIcon = (position: number): JSX.Element => {
-  //   switch (position) {
-  //     case 1:
-  //       return <IoTrophyOutline className="w-6 h-6 text-yellow-500" />;
-  //     case 2:
-  //       return <FaMedal className="w-6 h-6 text-gray-400" />;
-  //     case 3:
-  //       return <FaAward className="w-6 h-6 text-amber-600" />;
-  //     default:
-  //       return (
-  //         <span className="w-6 h-6 flex items-center justify-center text-sm font-semibold text-gray-600">
-  //           #{position}
-  //         </span>
-  //       );
-  //   }
-  // };
-
-  // const getRankStyle = (position: number): string => {
-  //   switch (position) {
-  //     case 1:
-  //       return "bg-gradient-to-r from-yellow-50 to-transparent";
-  //     case 2:
-  //       return "bg-gradient-to-r from-gray-50 to-transparent";
-  //     case 3:
-  //       return "bg-gradient-to-r from-amber-50 to-transparent";
-  //     default:
-  //       return "bg-white hover:bg-purple-50";
-  //   }
-  // };
-
-  // const formatWalletAddress = (address: string): string => {
-  //   return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  // };
-
-  // const downloadLeaderboard = (): void => {
-  //   if (!results) return;
-
-  //   const csvHeader = [
-  //     "Rank",
-  //     "User Name",
-  //     "Wallet Address",
-  //     "Quiz Points",
-  //     "Total Points",
-  //     "Correct Answers",
-  //     "Total Answers",
-  //     "Accuracy (%)",
-  //     "Quiz Completion Date",
-  //   ].join(",");
-
-  //   const csvData = results.leaderboard.map(
-  //     (participant: LeaderboardEntry, index: number) =>
-  //       [
-  //         index + 1,
-  //         `"${participant.userName}"`,
-  //         participant.walletAddress,
-  //         participant.pointsEarned,
-  //         participant.totalPoints,
-  //         participant.correctAnswers,
-  //         participant.totalAnswers,
-  //         participant.accuracy,
-  //         new Date().toISOString().split("T")[0],
-  //       ].join(",")
-  //   );
-
-  //   const csvContent = [csvHeader, ...csvData].join("\n");
-  //   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  //   const link = document.createElement("a");
-  //   const url = URL.createObjectURL(blob);
-
-  //   link.setAttribute("href", url);
-  //   link.setAttribute(
-  //     "download",
-  //     `${(results.title || "Quiz").replace(/\s+/g, "_")}_Leaderboard_${
-  //       new Date().toISOString().split("T")[0]
-  //     }.csv`
-  //   );
-  //   link.style.visibility = "hidden";
-  //   document.body.appendChild(link);
-  //   link.click();
-  //   document.body.removeChild(link);
-  // };
 
   const getRankIcon = (position: number): JSX.Element => {
     switch (position) {
@@ -770,55 +560,6 @@ const QuizLeaderboard: React.FC<QuizLeaderboardProps> = ({
       </div>
     );
   }
-
-  // if (isLoading) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-8">
-  //       <div className="max-w-6xl mx-auto">
-  //         <div className="animate-pulse">
-  //           <div className="h-8 bg-purple-200 rounded-lg mb-4"></div>
-  //           <div className="h-24 bg-purple-100 rounded-xl mb-6"></div>
-  //           <div className="space-y-4">
-  //             {[...Array(5)].map((_, i) => (
-  //               <div key={i} className="h-16 bg-purple-50 rounded-xl"></div>
-  //             ))}
-  //           </div>
-  //         </div>
-  //         {cachedData && (
-  //           <div className="mt-4 text-center text-sm text-purple-600">
-  //             Loading fresh data...
-  //           </div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // if (!results) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-8">
-  //       <div className="max-w-6xl mx-auto">
-  //         <div className="text-center py-12 bg-white rounded-3xl shadow-xl border border-purple-100">
-  //           <IoTrophyOutline className="w-16 h-16 text-purple-300 mx-auto mb-4" />
-  //           <h2 className="text-xl font-semibold text-gray-600 mb-2">
-  //             No Quiz Results Found
-  //           </h2>
-  //           <p className="text-gray-500 mb-4">
-  //             Unable to load quiz results at this time.
-  //           </p>
-  //           {agendaId && (
-  //             <button
-  //               onClick={handleRefresh}
-  //               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-  //             >
-  //               Try Again
-  //             </button>
-  //           )}
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 relative overflow-hidden">

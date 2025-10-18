@@ -268,6 +268,7 @@ import ReactDOM from "react-dom";
 import {
   useParticipantControls,
   useParticipantData,
+  useStreamContext,
   type SDKParticipant,
   type Participant,
 } from "@vidbloq/react";
@@ -302,6 +303,7 @@ const ParticipantTileContent = ({
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<Participant | null>(null);
   const [showPinOptions, setShowPinOptions] = useState(false);
+  const { streamMetadata: {streamId} } = useStreamContext();
 
   const controls = useParticipantControls({
     participant,
@@ -622,6 +624,7 @@ const ParticipantTileContent = ({
               setShowSendModal(false);
               setSelectedRecipient(null);
             }}
+            streamId={streamId}
           />,
           document.body
         )

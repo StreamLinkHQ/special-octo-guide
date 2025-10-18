@@ -1,8 +1,10 @@
-// TypeScript Types
 export type ContestMode = "showcase" | "elimination" | "tournament";
 export type VotingPermissions = "all" | "judges" | "contestants";
 export type ContestType = "simultaneous" | "turn-based";
 export type VotingType = "simple" | "criteria";
+
+// Voting mode for turn-based contests
+export type VotingMode = 'realtime' | 'per-turn' | 'final-only' | 'both';
 
 export interface VotingCriterion {
   id: string;
@@ -53,6 +55,15 @@ export interface TurnBasedContestConfig extends BaseContestConfig {
   plugin: {
     turnDuration: number;
     autoAdvance: boolean;
+    
+    // Voting mode configuration
+    votingMode?: VotingMode;
+    
+    // Duration for per-turn voting (only used if votingMode is 'per-turn' or 'both')
+    turnVotingDuration?: number;
+    
+    // Optional custom turn order
+    customTurnOrder?: string[];
   };
 }
 

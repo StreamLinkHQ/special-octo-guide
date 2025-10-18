@@ -20,7 +20,7 @@ export const useBackgroundConnectionPersistence = (): void => {
   useEffect(() => {
     if (!websocket || !roomName) return;
 
-    console.log('Background persistence enabled for room:', roomName);
+    // console.log('Background persistence enabled for room:', roomName);
 
     // Aggressive keepalive mechanism
     const startKeepAlive = (interval: number = 5000): void => {
@@ -47,11 +47,11 @@ export const useBackgroundConnectionPersistence = (): void => {
       
       if (isHidden) {
         // User minimized or switched tabs - maintain connection
-        console.log('Browser hidden - maintaining connection with aggressive keepalive');
+        // console.log('Browser hidden - maintaining connection with aggressive keepalive');
         startKeepAlive(3000); // More aggressive 3-second interval when hidden
       } else {
         // User returned - back to normal
-        console.log('Browser visible - returning to normal keepalive');
+        // console.log('Browser visible - returning to normal keepalive');
         startKeepAlive(10000); // Normal 10-second interval when visible
       }
     };

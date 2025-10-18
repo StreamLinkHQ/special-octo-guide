@@ -15,7 +15,7 @@ import {
   getAvatarOptions,
 } from "../utils";
 import type { UserPreferences } from "../types";
-import { useRequirePublicKey, getTokenBalance } from "@vidbloq/react";
+import { useBalance } from "@vidbloq/react";
 import { SendModal } from "../components";
 import { CustomWalletProvider } from "../components/custom-wallet-provider";
 
@@ -30,11 +30,12 @@ const UserProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [balance, setBalance] = useState(0);
-
+  const {
+    usdcBalance: balance,
+    // refresh: refreshBalance,
+  } = useBalance();
   const userContext = useUser();
   const wallet = useWallet({ type: "solana" });
-  const { publicKey } = useRequirePublicKey();
 
   const statusOptions = [
     { value: "available", label: "Available", color: "bg-green-500" },
@@ -42,21 +43,6 @@ const UserProfilePage = () => {
     { value: "away", label: "Away", color: "bg-yellow-500" },
     { value: "invisible", label: "Invisible", color: "bg-gray-500" },
   ];
-
-  // Get USDC balance
-  const getUsdcBalance = async () => {
-    if (!publicKey) return;
-    try {
-      const balanceData = await getTokenBalance(publicKey.toString());
-      setBalance(balanceData.onChainBalance.usdc);
-    } catch (error) {
-      console.error("Error fetching balance:", error);
-    }
-  };
-
-  useEffect(() => {
-    getUsdcBalance();
-  }, [publicKey]);
 
   // Store Google credentials when user data becomes available
   useEffect(() => {
@@ -209,7 +195,6 @@ const UserProfilePage = () => {
 
   const handleModalClose = () => {
     setShowTransferModal(false);
-    getUsdcBalance(); // Refresh balance after modal closes
   };
 
   // Mock participant for general transfer (no specific recipient)

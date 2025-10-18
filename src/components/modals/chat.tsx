@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useChat, type Participant, type SDKChatMessage } from "@vidbloq/react";
-import Modal from "../ui/v-modal";
+import Modal from "../ui/modal";
 import { Icon } from "../icons";
 
 type ChatModalProps = {

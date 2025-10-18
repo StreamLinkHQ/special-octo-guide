@@ -1,7 +1,7 @@
 import { RiLink } from "react-icons/ri";
 import { IoIosClose } from "react-icons/io";
 import { FiCopy } from "react-icons/fi";
-import { Modal } from "../ui";
+// import { Modal } from "../ui";
 import { copyText } from "../../utils";
 
 type Stream = {
@@ -12,6 +12,22 @@ type ShareModalProps = {
   stream: Stream;
   closeFunc: () => void;
 };
+
+type ModalProps = {
+  children: React.ReactNode;
+  bgColor: string;
+};
+
+const Modal = ({ children, bgColor }: ModalProps) => {
+  return (
+    <div className={`z-[20] w-full h-full ${bgColor} fixed top-0 left-0`}>
+      <div className="flex flex-col items-center justify-center h-full">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const ShareModal = ({
   stream: { name, streamSessionType },
   closeFunc,

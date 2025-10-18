@@ -3,8 +3,8 @@ import IntegratedContestUI from "./simultaneous";
 import { TurnBased } from "./turn-based";
 
 const ContestWrapper = () => {
-  const { config, contestType, contestReady } = useContestConfig();
-  console.log({ config, contestType });
+  const { contestType, contestReady } = useContestConfig();
+  // console.log({ config, contestType });
 
     if (!contestReady) {
     return null;

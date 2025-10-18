@@ -220,7 +220,7 @@ import {
   useDownloadParticipants,
   type Participant,
 } from "@vidbloq/react";
-import Modal from "../ui/v-modal";
+import { Modal } from "../ui";
 import { Icon } from "../icons";
 import ParticipantSmall from "../stream/participant";
 import SendModal from "./send";
@@ -234,7 +234,7 @@ const ParticipantListModal = ({
   isOpen,
   onClose,
 }: ParticipantListModalProps) => {
-  const { userType } = useStreamContext();
+  const { userType, streamMetadata: {streamId} } = useStreamContext();
   const { participants, count } = useParticipantList();
   const { downloadParticipants } = useDownloadParticipants();
 
@@ -436,6 +436,7 @@ const ParticipantListModal = ({
         <SendModal
           selectedUser={selectedParticipant}
           closeFunc={handleCloseSendModal}
+          streamId={streamId}
         />
       )}
     </div>
