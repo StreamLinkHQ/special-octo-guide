@@ -8,6 +8,8 @@ import {
 import { useContestConfig } from "../../hooks";
 import { isTurnBasedConfig } from "../../utils";
 import { VotingInterface } from "./voting";
+import { FinalResults } from "./results";
+
 import {
   Users,
   Clock,
@@ -34,9 +36,10 @@ export function TurnBased() {
   const [showJudgeManagement, setShowJudgeManagement] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
   const [showRealtimeVoting, setShowRealtimeVoting] = useState(false);
-  
+
   // NEW: Persistent leaderboard state
-  const [showPersistentLeaderboard, setShowPersistentLeaderboard] = useState(true);
+  const [showPersistentLeaderboard, setShowPersistentLeaderboard] =
+    useState(true);
 
   // Criteria scores for realtime voting
   const [realtimeCriteriaScores, setRealtimeCriteriaScores] = useState<
@@ -177,13 +180,38 @@ export function TurnBased() {
     setShowRealtimeVoting(false);
   };
 
-// NEW: Persistent Leaderboard Component
-const PersistentLeaderboard = () => {
-  if (!showPersistentLeaderboard || !contestStarted) {
-    return null;
-  }
+  // NEW: Persistent Leaderboard Component
+  const PersistentLeaderboard = () => {
+    if (!showPersistentLeaderboard || !contestStarted) {
+      return null;
+    }
 
-  if (contest.leaderboard.length === 0) {
+    if (contest.leaderboard.length === 0) {
+      return (
+        <div className="fixed right-4 top-32 w-72 pointer-events-auto z-20">
+          <div className="bg-gray-900/95 backdrop-blur-sm rounded-xl border border-gray-800 shadow-xl">
+            <div className="p-3 border-b border-gray-800">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-purple-400" />
+                  Live Standings
+                </h3>
+                <button
+                  onClick={() => setShowPersistentLeaderboard(false)}
+                  className="p-1 hover:bg-gray-800 rounded transition-colors"
+                >
+                  <X className="w-3 h-3 text-gray-400" />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 text-center">
+              <p className="text-gray-400 text-sm">No contestants yet</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed right-4 top-32 w-72 pointer-events-auto z-20">
         <div className="bg-gray-900/95 backdrop-blur-sm rounded-xl border border-gray-800 shadow-xl">
@@ -201,81 +229,70 @@ const PersistentLeaderboard = () => {
               </button>
             </div>
           </div>
-          <div className="p-4 text-center">
-            <p className="text-gray-400 text-sm">No contestants yet</p>
+          <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+            {contest.leaderboard.map((entry: any, index: number) => {
+              // FIXED: Check if they have ANY votes at all (from any voting mode)
+              // Get the actual vote data for this contestant
+              const contestantVotes =
+                contest.votes.get(entry.participantId) || [];
+              const hasActualVotes = contestantVotes.length > 0;
+              const hasPerformed = hasActualVotes || entry.score > 0;
+
+              return (
+                <div
+                  key={entry.participantId}
+                  className={`flex items-center justify-between p-2.5 rounded-lg transition-all ${
+                    !hasPerformed ? "opacity-50" : ""
+                  } ${
+                    index === 0 && hasPerformed
+                      ? "bg-yellow-900/10 border border-yellow-600/20"
+                      : index === 1 && hasPerformed
+                      ? "bg-gray-700/10 border border-gray-600/20"
+                      : index === 2 && hasPerformed
+                      ? "bg-orange-900/10 border border-orange-600/20"
+                      : "bg-gray-800/30"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {index === 0 && hasPerformed && (
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                    )}
+                    {index === 1 && hasPerformed && (
+                      <Medal className="w-4 h-4 text-gray-400" />
+                    )}
+                    {index === 2 && hasPerformed && (
+                      <Award className="w-4 h-4 text-orange-500" />
+                    )}
+                    {(index > 2 || !hasPerformed) && (
+                      <span className="w-4 text-center text-xs text-gray-500">
+                        {index + 1}
+                      </span>
+                    )}
+                    <span className="text-white text-sm truncate max-w-[140px]">
+                      {entry.name}
+                    </span>
+                    {!hasPerformed && (
+                      <span className="text-[9px] text-gray-500 ml-1">
+                        (pending)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-white font-semibold text-sm">
+                      {entry.score.toFixed(1)}
+                    </div>
+                    <div className="text-gray-500 text-[10px]">
+                      {entry.votes}v
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     );
-  }
-
-  return (
-    <div className="fixed right-4 top-32 w-72 pointer-events-auto z-20">
-      <div className="bg-gray-900/95 backdrop-blur-sm rounded-xl border border-gray-800 shadow-xl">
-        <div className="p-3 border-b border-gray-800">
-          <div className="flex items-center justify-between">
-            <h3 className="text-white text-sm font-semibold flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-purple-400" />
-              Live Standings
-            </h3>
-            <button
-              onClick={() => setShowPersistentLeaderboard(false)}
-              className="p-1 hover:bg-gray-800 rounded transition-colors"
-            >
-              <X className="w-3 h-3 text-gray-400" />
-            </button>
-          </div>
-        </div>
-        <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
-          {contest.leaderboard.map((entry: any, index: number) => {
-            // FIXED: Check if they have ANY votes at all (from any voting mode)
-            // Get the actual vote data for this contestant
-            const contestantVotes = contest.votes.get(entry.participantId) || [];
-            const hasActualVotes = contestantVotes.length > 0;
-            const hasPerformed = hasActualVotes || entry.score > 0;
-            
-            return (
-              <div
-                key={entry.participantId}
-                className={`flex items-center justify-between p-2.5 rounded-lg transition-all ${
-                  !hasPerformed ? "opacity-50" : ""
-                } ${
-                  index === 0 && hasPerformed ? "bg-yellow-900/10 border border-yellow-600/20" :
-                  index === 1 && hasPerformed ? "bg-gray-700/10 border border-gray-600/20" :
-                  index === 2 && hasPerformed ? "bg-orange-900/10 border border-orange-600/20" :
-                  "bg-gray-800/30"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  {index === 0 && hasPerformed && <Crown className="w-4 h-4 text-yellow-500" />}
-                  {index === 1 && hasPerformed && <Medal className="w-4 h-4 text-gray-400" />}
-                  {index === 2 && hasPerformed && <Award className="w-4 h-4 text-orange-500" />}
-                  {(index > 2 || !hasPerformed) && (
-                    <span className="w-4 text-center text-xs text-gray-500">{index + 1}</span>
-                  )}
-                  <span className="text-white text-sm truncate max-w-[140px]">
-                    {entry.name}
-                  </span>
-                  {!hasPerformed && (
-                    <span className="text-[9px] text-gray-500 ml-1">(pending)</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-white font-semibold text-sm">
-                    {entry.score.toFixed(1)}
-                  </div>
-                  <div className="text-gray-500 text-[10px]">
-                    {entry.votes}v
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
+  };
 
   // Selection UI
   if (showSelection && contest.isHost) {
@@ -545,15 +562,17 @@ const PersistentLeaderboard = () => {
       <PersistentLeaderboard />
 
       {/* NEW: Toggle button to show leaderboard if hidden */}
-      {!showPersistentLeaderboard && contestStarted && contest.leaderboard.length > 0 && (
-        <button
-          onClick={() => setShowPersistentLeaderboard(true)}
-          className="fixed right-4 top-32 pointer-events-auto bg-gray-900/95 backdrop-blur-sm p-2.5 rounded-lg border border-gray-800 hover:bg-gray-800 transition-colors z-20"
-          title="Show Leaderboard"
-        >
-          <Trophy className="w-4 h-4 text-purple-400" />
-        </button>
-      )}
+      {!showPersistentLeaderboard &&
+        contestStarted &&
+        contest.leaderboard.length > 0 && (
+          <button
+            onClick={() => setShowPersistentLeaderboard(true)}
+            className="fixed right-4 top-32 pointer-events-auto bg-gray-900/95 backdrop-blur-sm p-2.5 rounded-lg border border-gray-800 hover:bg-gray-800 transition-colors z-20"
+            title="Show Leaderboard"
+          >
+            <Trophy className="w-4 h-4 text-purple-400" />
+          </button>
+        )}
 
       {/* Host Controls */}
       {contest.isHost && (
@@ -669,14 +688,20 @@ const PersistentLeaderboard = () => {
       <RealtimeVotingPanel />
 
       {/* Current Performance Display */}
-       {/* {turnState.currentPerformerId && !votingState.isActive && (
+      {turnState.currentPerformerId && !votingState.isActive && (
         <div className="fixed top-16 sm:top-20 left-1/2 transform -translate-x-1/2 pointer-events-auto z-20 w-[90vw] sm:w-auto">
           <div className="bg-gray-900/95 backdrop-blur-sm rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 border border-gray-800">
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    turnState.isPaused
+                      ? "bg-yellow-500"
+                      : "bg-red-500 animate-pulse"
+                  }`}
+                />
                 <span className="text-xs text-gray-400 uppercase tracking-wider hidden sm:inline">
-                  Live
+                  {turnState.isPaused ? "Paused" : "Live"}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 text-white">
@@ -697,12 +722,64 @@ const PersistentLeaderboard = () => {
               </div>
               <div className="flex items-center gap-1 sm:gap-1.5 text-white">
                 <Clock className="w-3 sm:w-4 h-3 sm:h-4 text-gray-400" />
-                <span className="font-mono text-xs sm:text-sm font-semibold">
+                <span
+                  className={`font-mono text-xs sm:text-sm font-semibold ${
+                    turnState.isPaused ? "text-yellow-400" : ""
+                  }`}
+                >
                   {Math.floor(turnState.timeRemaining / 60)}:
                   {(turnState.timeRemaining % 60).toString().padStart(2, "0")}
                 </span>
               </div>
 
+              {/* Timer Controls for Host */}
+              {contest.isHost && (
+                <div className="flex items-center gap-1 ml-2">
+                  {!turnState.isPaused ? (
+                    <button
+                      onClick={pauseTurn}
+                      className="p-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded transition-colors"
+                      title="Pause Timer"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 16 16"
+                      >
+                        <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={resumeTurn}
+                      className="p-1.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition-colors"
+                      title="Resume Timer"
+                    >
+                      <Play className="w-3 h-3" />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={restartTurn}
+                    className="p-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition-colors"
+                    title="Restart Timer"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"
+                      />
+                      <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              {/* Real-time Vote Button */}
               {realtimeVotingState.canVoteNow &&
                 !hasRealtimeVotedFor(turnState.currentPerformerId) && (
                   <button
@@ -723,100 +800,7 @@ const PersistentLeaderboard = () => {
             </div>
           </div>
         </div>
-      )}  */}
-{/* Current Performance Display with Timer Controls */}
-{turnState.currentPerformerId && !votingState.isActive && (
-  <div className="fixed top-16 sm:top-20 left-1/2 transform -translate-x-1/2 pointer-events-auto z-20 w-[90vw] sm:w-auto">
-    <div className="bg-gray-900/95 backdrop-blur-sm rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 border border-gray-800">
-      <div className="flex items-center gap-2 sm:gap-4">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className={`w-2 h-2 rounded-full ${turnState.isPaused ? 'bg-yellow-500' : 'bg-red-500 animate-pulse'}`} />
-          <span className="text-xs text-gray-400 uppercase tracking-wider hidden sm:inline">
-            {turnState.isPaused ? 'Paused' : 'Live'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 text-white">
-          <Mic className="w-3 sm:w-4 h-3 sm:h-4 text-purple-400" />
-          <span className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
-            {(() => {
-              const contestant = contest.getContestant(
-                turnState.currentPerformerId
-              );
-              const participant = participants.find(
-                (p) => p.id === turnState.currentPerformerId
-              );
-              return (
-                contestant?.name || participant?.userName || "Performer"
-              );
-            })()}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-1.5 text-white">
-          <Clock className="w-3 sm:w-4 h-3 sm:h-4 text-gray-400" />
-          <span className={`font-mono text-xs sm:text-sm font-semibold ${turnState.isPaused ? 'text-yellow-400' : ''}`}>
-            {Math.floor(turnState.timeRemaining / 60)}:
-            {(turnState.timeRemaining % 60).toString().padStart(2, "0")}
-          </span>
-        </div>
-
-        {/* Timer Controls for Host */}
-        {contest.isHost && (
-          <div className="flex items-center gap-1 ml-2">
-            {!turnState.isPaused ? (
-              <button
-                onClick={pauseTurn}
-                className="p-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded transition-colors"
-                title="Pause Timer"
-              >
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
-                </svg>
-              </button>
-            ) : (
-              <button
-                onClick={resumeTurn}
-                className="p-1.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition-colors"
-                title="Resume Timer"
-              >
-                <Play className="w-3 h-3" />
-              </button>
-            )}
-            
-            <button
-              onClick={restartTurn}
-              className="p-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition-colors"
-              title="Restart Timer"
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-              </svg>
-            </button>
-          </div>
-        )}
-
-        {/* Real-time Vote Button */}
-        {realtimeVotingState.canVoteNow &&
-          !hasRealtimeVotedFor(turnState.currentPerformerId) && (
-            <button
-              onClick={() => setShowRealtimeVoting(true)}
-              className="ml-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <ThumbsUp className="w-3 h-3" />
-              <span className="hidden sm:inline">Vote Now</span>
-            </button>
-          )}
-
-        {realtimeVotingState.enabled &&
-          hasRealtimeVotedFor(turnState.currentPerformerId) && (
-            <span className="ml-2 text-xs px-2 py-1 rounded bg-purple-600/20 text-purple-400 font-medium">
-              ✓ Voted
-            </span>
-          )}
-      </div>
-    </div>
-  </div>
-)}
+      )}
       {/* Toggle Buttons for Queue */}
       {turnState.performanceQueue.length > 0 && !votingState.isActive && (
         <button
@@ -897,23 +881,31 @@ const PersistentLeaderboard = () => {
         )}
 
       {/* YOUR TURN overlay */}
-      {/* {turnState.isMyTurn &&
+      {turnState.isMyTurn &&
         turnState.currentPerformerId &&
         !votingState.isActive && (
           <div className="fixed top-32 left-1/2 transform -translate-x-1/2 pointer-events-auto z-50">
-            <div className="bg-purple-600 rounded-lg px-6 py-3 shadow-xl">
+            <div
+              className={`rounded-lg px-6 py-3 shadow-xl ${
+                turnState.isPaused ? "bg-yellow-600" : "bg-purple-600"
+              }`}
+            >
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-white">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <div
+                    className={`w-2 h-2 bg-white rounded-full ${
+                      !turnState.isPaused && "animate-pulse"
+                    }`}
+                  />
                   <span className="font-semibold text-sm uppercase tracking-wider">
-                    Your Turn
+                    {turnState.isPaused ? "Paused - Your Turn" : "Your Turn"}
                   </span>
                 </div>
                 <div className="text-white font-mono text-lg font-bold">
                   {Math.floor(turnState.timeRemaining / 60)}:
                   {(turnState.timeRemaining % 60).toString().padStart(2, "0")}
                 </div>
-                {contest.isHost && (
+                {contest.isHost && !turnState.isPaused && (
                   <button
                     onClick={() => endCurrentTurn()}
                     className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded text-sm font-medium transition-colors"
@@ -924,37 +916,7 @@ const PersistentLeaderboard = () => {
               </div>
             </div>
           </div>
-        )} */}
-
-{/* YOUR TURN overlay with pause status */}
-{turnState.isMyTurn &&
-  turnState.currentPerformerId &&
-  !votingState.isActive && (
-    <div className="fixed top-32 left-1/2 transform -translate-x-1/2 pointer-events-auto z-50">
-      <div className={`rounded-lg px-6 py-3 shadow-xl ${turnState.isPaused ? 'bg-yellow-600' : 'bg-purple-600'}`}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-white">
-            <div className={`w-2 h-2 bg-white rounded-full ${!turnState.isPaused && 'animate-pulse'}`} />
-            <span className="font-semibold text-sm uppercase tracking-wider">
-              {turnState.isPaused ? 'Paused - Your Turn' : 'Your Turn'}
-            </span>
-          </div>
-          <div className="text-white font-mono text-lg font-bold">
-            {Math.floor(turnState.timeRemaining / 60)}:
-            {(turnState.timeRemaining % 60).toString().padStart(2, "0")}
-          </div>
-          {contest.isHost && !turnState.isPaused && (
-            <button
-              onClick={() => endCurrentTurn()}
-              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded text-sm font-medium transition-colors"
-            >
-              End Turn
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )}
+        )}
 
       {/* VOTING PHASE UI */}
       <VotingInterface
@@ -971,7 +933,7 @@ const PersistentLeaderboard = () => {
         votingType={contextConfig.votingType || "simple"}
         votingCriteria={votingCriteria}
         onSubmitVote={submitVote}
-        onClose={contest.isHost ? closeFinalVoting : undefined}
+        // onClose={contest.isHost ? closeFinalVoting : undefined}
         title={votingState.isTurnVoting ? "Turn Voting" : "Final Voting"}
         subtitle={
           votingState.isTurnVoting
@@ -986,80 +948,13 @@ const PersistentLeaderboard = () => {
       />
 
       {/* FINAL RESULTS */}
-      {showFinalResults &&
-        !votingState.isActive &&
-        contest.leaderboard.length > 0 && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center pointer-events-auto p-4">
-            <div className="max-w-3xl w-full">
-              <div className="bg-gray-900 rounded-xl p-8 border border-gray-800">
-                <h2 className="text-3xl font-bold text-white text-center mb-8">
-                  Final Results
-                </h2>
-
-                <div className="space-y-3">
-                  {contest.leaderboard.map((entry: any, index: number) => (
-                    <div
-                      key={entry.participantId}
-                      className={`flex items-center justify-between p-4 rounded-lg ${
-                        index === 0
-                          ? "bg-yellow-900/10 border border-yellow-600/30"
-                          : index === 1
-                          ? "bg-gray-700/10 border border-gray-600/30"
-                          : index === 2
-                          ? "bg-orange-900/10 border border-orange-600/30"
-                          : "bg-gray-800/30"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="text-2xl">
-                          {index === 0 && (
-                            <Crown className="w-8 h-8 text-yellow-500" />
-                          )}
-                          {index === 1 && (
-                            <Medal className="w-7 h-7 text-gray-400" />
-                          )}
-                          {index === 2 && (
-                            <Award className="w-6 h-6 text-orange-500" />
-                          )}
-                          {index > 2 && (
-                            <span className="text-gray-500 w-8 text-center font-bold">
-                              {index + 1}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-white font-semibold text-lg">
-                            {entry.name}
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            {entry.votes} votes received
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold text-2xl">
-                          {entry.score.toFixed(2)}
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          out of 10.00
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {contest.isHost && (
-                  <button
-                    onClick={() => contest.endContest(true)} // FIXED: Force end
-                    className="w-full mt-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    End Contest
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      {showFinalResults && !votingState.isActive && (
+        <FinalResults
+          leaderboard={contest.leaderboard}
+          isHost={contest.isHost}
+          onEndContest={() => contest.endContest(true)}
+        />
+      )}
     </div>
   );
 }

@@ -70,7 +70,7 @@ const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
     recipients,
     streamId,
     deliveryOptions: {
-      priority: "standard",
+      priority: "express",
     },
   });
 
