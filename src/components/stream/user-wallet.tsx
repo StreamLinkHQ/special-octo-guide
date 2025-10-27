@@ -45,8 +45,6 @@ const InStreamWalletModal = ({ isOpen, onClose }: InStreamWalletModalProps) => {
   const {
     usdcBalance: balance,
     refresh: refreshBalance,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    loading: balanceLoading,
   } = useBalance();
 
   // Hooks
