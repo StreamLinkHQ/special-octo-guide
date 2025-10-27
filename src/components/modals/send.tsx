@@ -3,9 +3,10 @@ import {
   type Participant,
   useNotification,
   useTransaction,
-  useBalance,
+  useBalance
 } from "@vidbloq/react";
 import { Spinner } from "../ui";
+
 
 type SendModalProps = {
   selectedUser: Participant | null;
@@ -20,6 +21,7 @@ const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
   const [isTransactionFetched, setIsTransactionFetched] =
     useState<boolean>(false);
   const [error, setError] = useState<string>("");
+
   const {
     usdcBalance: balance,
     refresh: refreshBalance,
@@ -122,6 +124,10 @@ const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
       setError("");
       return false;
     }
+     if (balanceLoading) {
+    setError("Loading balance...");
+    return false;
+  }
     if (numValue > balance) {
       setError("Insufficient balance");
       return false;
@@ -203,6 +209,13 @@ const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
 
   // Get button state
   const getButtonState = () => {
+    if (balanceLoading) {
+    return {
+      text: "Loading balance...",
+      disabled: true,
+      className: "bg-gray-400 text-white cursor-not-allowed",
+    };
+  }
     if (transactionSignature)
       return {
         text: "Sent! ✓",
@@ -334,6 +347,7 @@ const SendModal = ({ selectedUser, closeFunc, streamId }: SendModalProps) => {
               value={amount}
               onChange={handleAmountChange}
               placeholder="0.00"
+              disabled={balanceLoading}
               className="w-full bg-black/5 border-2 border-black/10 rounded-xl px-4 py-4 pr-20 text-2xl font-medium text-black placeholder-black focus:outline-none focus:border-purple-500 focus:bg-black/[0.07] transition-all duration-200"
             />
             <button

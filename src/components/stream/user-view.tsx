@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { useStreamContext, useTenantContext, useBalance } from "@vidbloq/react";
-import { Wallet } from "lucide-react";
-import { ContestConfigProvider, StreamProvider } from "../../context";
+import { useStreamContext, useTenantContext } from "@vidbloq/react";
+import {
+  ContestConfigProvider,
+  StreamProvider,
+  // BalanceProvider,
+} from "../../context";
 import { AddonIndicator, AgendaTabs } from "../agenda";
 import CallControls from "./call-controls";
 
 import Livestream from "./livestream";
-import { Tooltip } from "../ui";
 import Meeting from "./meeting";
 import RequestCard, { type GuestRequest } from "./request-card";
 import { ParticipantNotifications } from "./participant-notifications";
@@ -20,6 +22,7 @@ import {
   ContestWrapper,
 } from "../contest";
 import InStreamWalletModal from "./user-wallet";
+import WalletButton from "./wallet-button";
 
 // Memoize child components to prevent unnecessary re-renders
 const MemoizedMeeting = memo(Meeting);
@@ -49,7 +52,7 @@ const UserView = () => {
   const [showParticipantList, setShowParticipantList] =
     useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
-  const { usdcBalance: balance } = useBalance();
+  // const { usdcBalance: balance } = useBalance();
 
   // Simplified tracking - no need for extensive refs
   const processedRequestIds = useRef(new Set<string>());
@@ -171,86 +174,78 @@ const UserView = () => {
   }, [showWalletModal]);
 
   return (
-    <StreamProvider>
-      <PersistentCallWidget />
-      <MemoizedParticipantNotifications />
-      {isMeeting ? (
-        <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
-      ) : (
-        <MemoizedLivestream />
-      )}
+    // <BalanceProvider>
+      <StreamProvider>
+        <PersistentCallWidget />
+        <MemoizedParticipantNotifications />
+        {isMeeting ? (
+          <MemoizedMeeting setShowParticipantList={handleShowParticipantList} />
+        ) : (
+          <MemoizedLivestream />
+        )}
 
-      <div className="w-[90%] lg:w-[80%] mx-auto">
-        <MemoizedCallControls
-          onAgendaToggle={handleAgendaToggle}
-          showParticipantList={showParticipantList}
-          setShowParticipantList={setShowParticipantList}
-        />
-      </div>
-
-      {shouldShowGuestRequests && (
-        <div className="absolute right-10 top-20 rounded">
-          {localGuestRequests.map((request) => (
-            <RequestCard
-              request={request}
-              key={request.participantId}
-              onRemove={handleRemoveRequest}
-            />
-          ))}
+        <div className="w-[90%] lg:w-[80%] mx-auto">
+          <MemoizedCallControls
+            onAgendaToggle={handleAgendaToggle}
+            showParticipantList={showParticipantList}
+            setShowParticipantList={setShowParticipantList}
+          />
         </div>
-      )}
 
-      {shouldShowRaisedHands && (
-        <>
-          <RaisedHandsToast
-            raisedHands={raisedHands}
-            onViewAll={() => setShowRaisedHandsSidebar(true)}
-          />
-
-          <RaisedHandsSidebar
-            raisedHands={raisedHands}
-            isOpen={showRaisedHandsSidebar}
-            onClose={() => setShowRaisedHandsSidebar(false)}
-          />
-        </>
-      )}
-
-      {!showAgenda && (
-        <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
-      )}
-
-      {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
-      <div className="absolute top-10 right-8">
-        <Tooltip content="View wallet">
-          <button
-            className="flex z-50 items-center gap-2 h-10 px-3 bg-white backdrop-blur-sm rounded-xl shadow-sm hover:bg-gray-200 transition-all duration-200 "
-            onClick={handleWalletToggle}
-          >
-            <Wallet className="text-[#8b5cf6] w-5 h-5" />
-            <span className="font-medium text-sm text-gray-700">
-              ${balance.toFixed(2)}
-            </span>
-          </button>
-        </Tooltip>
-      </div>
-
-      <InStreamWalletModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-      />
-      {/* <MemoizedContestUI contest={contest} /> */}
-      <ContestConfigProvider>
-        {userType === "host" && (
-          <div className="">
-            <ContestConfigTrigger />
+        {shouldShowGuestRequests && (
+          <div className="absolute right-10 top-20 rounded">
+            {localGuestRequests.map((request) => (
+              <RequestCard
+                request={request}
+                key={request.participantId}
+                onRemove={handleRemoveRequest}
+              />
+            ))}
           </div>
         )}
 
-        {/* The panel itself (hidden until triggered) */}
-        <MemoizedContestConfigPanel />
-        <MemoizedContestWrapper />
-      </ContestConfigProvider>
-    </StreamProvider>
+        {shouldShowRaisedHands && (
+          <>
+            <RaisedHandsToast
+              raisedHands={raisedHands}
+              onViewAll={() => setShowRaisedHandsSidebar(true)}
+            />
+
+            <RaisedHandsSidebar
+              raisedHands={raisedHands}
+              isOpen={showRaisedHandsSidebar}
+              onClose={() => setShowRaisedHandsSidebar(false)}
+            />
+          </>
+        )}
+
+        {!showAgenda && (
+          <MemoizedAddonIndicator onOpenModal={handleAgendaToggle} />
+        )}
+
+        {showAgenda && <MemoizedAgendaTabs closeFunc={handleCloseAgenda} />}
+        <div className="absolute top-10 right-8">
+          <WalletButton handleWalletToggle={handleWalletToggle} />
+        </div>
+
+        <InStreamWalletModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+        />
+        {/* <MemoizedContestUI contest={contest} /> */}
+        <ContestConfigProvider>
+          {userType === "host" && (
+            <div className="">
+              <ContestConfigTrigger />
+            </div>
+          )}
+
+          {/* The panel itself (hidden until triggered) */}
+          <MemoizedContestConfigPanel />
+          <MemoizedContestWrapper />
+        </ContestConfigProvider>
+      </StreamProvider>
+    // </BalanceProvider>
   );
 };
 
